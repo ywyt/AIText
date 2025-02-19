@@ -312,7 +312,6 @@ function dataSrc() {
                 alert("对话框未设置提示");
                 return false;
             }
-            debugger;
             var col = $(obj);
           
             var sb = '   <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>';

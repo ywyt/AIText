@@ -1,0 +1,71 @@
+﻿@model AIText.AiSetting
+@{
+
+}
+<div class="modal-content">
+    <form class="form-horizontal" data-ajax="true" data-ajax-complete="ajaxRvCompleted" asp-action="DoAdd" asp-controller="AiSetting" data-ajax-method="post">
+        @Html.HiddenFor(obj => obj.Id)
+        <div class="modal-body">
+
+            <div class="row mb-3 align-items-end">
+
+                <div class="col">
+                    <label class="form-label">提示词</label>
+                    <input asp-for="Prompt" class="bg-focus form-control parsley-validated" />
+                    <span asp-validation-for="Prompt" class="text-danger"> </span>
+                </div>
+                <div class="col">
+                    <label class="form-label">每天创建的文章数</label>
+                    <input asp-for="CountPerDay" type="number" class="bg-focus form-control parsley-validated" />
+                    <span asp-validation-for="CountPerDay" class="text-danger"> </span>
+                </div>
+            </div>
+
+            <div class="row mb-3 align-items-end">
+
+                <div class="col">
+                    <label class="form-label">AI平台</label>
+                    <input asp-for="AiSite" type="password" class="bg-focus form-control parsley-validated" />
+                    <span asp-validation-for="AiSite" class="text-danger"> </span>
+                </div>
+            </div>
+            <div class="row mb-3 align-items-end">
+
+                <div class="col">
+                    <label class="form-label">Wordpress站点</label>
+                    <input asp-for="WpSite" type="password" class="bg-focus form-control parsley-validated" />
+                    <span asp-validation-for="WpSite" class="text-danger"> </span>
+                </div>
+            </div>
+            <div class="row mb-3 align-items-end">
+                <div class="col">
+                    <label class="form-label">开始时间</label>
+                    <input class="form-control" asp-for="StartDate">
+
+                </div>
+            </div>
+            <div class="row mb-3 align-items-end">
+                <div class="col">
+                    <label class="form-check">
+                        <input class="form-check-input" type="checkbox" asp-for="IsEnable">
+                        <span class="form-check-label">是否启用</span>
+                    </label>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">创建</button>
+        </div>
+    </form>
+
+</div>
+<script>
+    document.getElementById('CountPerDay').addEventListener('input', function (e) {
+        let value = e.target.value;
+        // 允许输入 1 到 9 开头的数字，不允许负号、小数点或前导 0
+        if (!/^[1-9]\d*$/.test(value)) {
+            e.target.value = value.replace(/[^0-9]/g, '').replace(/^0+/, '');
+        }
+    });
+</script>
