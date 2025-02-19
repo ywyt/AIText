@@ -18,7 +18,20 @@ namespace AIText
 
         public string Prompt { get; set; }
 
+        /// <summary>
+        /// 每天创建的文章数
+        /// </summary>
         public int CountPerDay { get; set; }
+
+        /// <summary>
+        /// AI平台
+        /// </summary>
+        public string AiSite { get; set; }
+
+        /// <summary>
+        /// 需要推送到的Wordpress站点
+        /// </summary>
+        public string WpSite { get; set; }
 
         public bool IsEnable { get; set; }
 
