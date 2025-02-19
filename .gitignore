@@ -1,0 +1,83 @@
+# Visual Studio 文件
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# 编译输出
+bin/
+obj/
+out/
+
+# NuGet 包
+*.nupkg
+packages/
+project.lock.json
+project.assets.json
+**/node_modules/
+
+# 依赖缓存
+*.rsuser
+*.dotCover
+*.log
+logs/
+
+# Rider 相关（如果使用 JetBrains Rider）
+.idea/
+*.sln.iml
+
+# ASP.NET 临时文件
+wwwroot/node_modules/
+wwwroot/lib/
+
+# 发布和部署
+publish/
+*.publishsettings
+*.pubxml
+*.pfx
+
+# 数据库
+*.mdf
+*.ldf
+*.sqlite
+
+# 运行时
+*.pidb
+*.svclog
+*.tlog
+*.cache
+*.pdb
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# User-specific files
+*.userprefs
+*.localhistory
+*.sln.cache
+
+# Visual Studio Code
+.vscode/
+
+# Docker
+**/Dockerfile
+**/docker-compose*
+
+# 其他环境变量文件
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# 不要忽略 NuGet 目录中的特定 DLL
+!packages/**/*.dll
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*.swo
+*.swn

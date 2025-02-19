@@ -1,0 +1,131 @@
+﻿@model PageConfig
+@{
+    var item_form = (this.Model.CurrentPageIndex - 1) * this.Model.PageSize + 1;
+    var item_total = this.Model.TotalItemCount;
+    var item_to = (this.Model.CurrentPageIndex) * this.Model.PageSize;
+    item_to = item_to > item_total ? item_total : item_to;
+
+    var last = this.Model.TotalPages;
+    var prev = this.Model.CurrentPageIndex - 1;
+    var next = this.Model.CurrentPageIndex + 1;
+
+    int currentPage = this.Model.CurrentPageIndex;
+
+    int leftPage = currentPage - 2;
+    int rightPage = currentPage + 2;
+
+    if (currentPage - 2 < 1)
+    {
+        rightPage += 3 - currentPage;
+    }
+
+    if (currentPage + 2 > last)
+    {
+        leftPage -= 2 - (last - currentPage);
+    }
+
+    leftPage = leftPage < 1 ? 1 : leftPage;
+    rightPage = rightPage > last ? last : rightPage;
+}
+
+
+
+<div class="card-footer d-flex align-items-center">
+    <p class="m-0 text-muted">第<span>@(item_form)</span>到@(item_to)/共@(item_total)  </p>
+    <ul class="pagination m-0 ms-auto">
+        @if (prev < 1)
+        {
+            <li class="page-item disabled">
+                <a class="page-link" tabindex="-1" aria-disabled="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><polyline points="15 6 9 12 15 18"></polyline></svg>
+                    prev
+                </a>
+            </li>
+        }
+        else
+        {
+            <li class="page-item">
+                <a class="page-link" href="#" tabindex="-1" onclick="return AjaxToPage('@this.Model.FormId',@prev)" aria-disabled="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><polyline points="15 6 9 12 15 18"></polyline></svg>
+                    prev
+                </a>
+            </li>
+        }
+
+        @for (int pages = leftPage; pages <= rightPage; pages++)
+        {
+            if (pages == rightPage && pages != last)
+            {
+                <li><a href='#' onclick="return AjaxToPage('@this.Model.FormId',@pages)">...</a></li>
+
+            }
+            else if (pages == currentPage)
+            {
+                <li class="page-item"><a class="page-link">@pages</a></li>
+            }
+            else
+            {
+                <li class="page-item"><a href='#' onclick="return AjaxToPage('@this.Model.FormId',@pages)" class="page-link">@pages</a></li>
+            }
+        }
+
+        @if (next > last)
+        {
+            <li class="page-item">
+                <a class="page-link">
+                    next <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><polyline points="9 6 15 12 9 18"></polyline></svg>
+                </a>
+            </li>
+        }
+        else
+        {
+            <li class="page-item">
+                <a onclick="return AjaxToPage('@this.Model.FormId',@next)" href="#" class="page-link">
+                    next <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><polyline points="9 6 15 12 9 18"></polyline></svg>
+                </a>
+            </li>
+        }
+        <li class="page-item">
+            @{
+                var _pageStr = new[] { 36, 50, 100 };
+            }
+            <select id="page_size" style="width:52px; padding:2.5px; margin-right:5px;" onchange="SelectPagesize(this)">
+                @foreach (var _pagesize in _pageStr)
+                {
+                    if (_pagesize == Model.PageSize)
+                    {
+                        <option value="@_pagesize" selected>@_pagesize</option>
+                    }
+                    else
+                    {
+                        <option value="@_pagesize">@_pagesize</option>
+                    }
+                }
+            </select>
+        </li>
+        <li class="page-item">
+            <input max="@last" style="text-align: center;width:50px" id="page_skip" type="number" value="@currentPage" min="0">
+        </li>
+        <li class="page-item">
+            <a href='#' onclick="return AjaxToPage('@this.Model.FormId', parseInt( $('#page_skip').val()) )" class="page-link">
+                跳转
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+<script>
+    $(function () {
+        UpdateHidden('@this.Model.FormId', 'pageIndex', '1');
+        UpdateHidden('@this.Model.FormId', 'HpageIndex', '@this.Model.CurrentPageIndex');
+        UpdateHidden('@this.Model.FormId', 'Hidden_Ajax_Time', '@DateTime.Now.Ticks.ToString()');
+        UpdateHidden('@this.Model.FormId', 'PageSize', '@this.Model.PageSize');
+    });
+
+    function SelectPagesize(obj)
+    {
+        UpdateHidden('@this.Model.FormId', 'PageSize', $(obj).val());
+        AjaxToPage('@this.Model.FormId', '1');
+    }
+</script>
