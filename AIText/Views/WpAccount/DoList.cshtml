@@ -1,5 +1,66 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@model commons.util.PageList<AIText.Models.WpAccount.WpAccountDto>
+@if (Model.List?.Count > 0)
+{
+    <div class="card-header">
+        <h4 class="card-title">列表</h4>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+                <tr>
+                    <th>网站</th>
+                    <th>用户名</th>
+                    <th>是否启用</th>
+
+                    <th class="w-1"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var info in Model.List)
+                {
+                    <tr>
+                        <td class="text-muted">
+                            @info.Site
+                        </td>
+                        <td class="text-muted">
+                            @info.Username
+                        </td>
+
+                        <td class="text-muted">
+                            @(info.IsEnable == true ? "是" : "否")
+                        </td>
+                        <td class="text-muted">
+                            <div class="btn-list flex-nowrap">
+                                <a data-src="@Url.Content("~/WpAccount/Edit?Id="+info.Id)" class="btn btn-white">
+                                    查看
+                                </a>
+                                <a data-confirm="/WpAccount/DoDelete?Id=@info.Id" title="是否删除" class="btn btn-white">
+                                    删除
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+
+            </tbody>
+        </table>
+
+
+    </div>
+
+    @Html.Pager(Model)
+}
+else
+{
+
+    <div class="empty">
+        <div class="empty-img">
+            <img src="~/static/illustrations/undraw_printing_invoices_5r4r.svg" height="128" alt="">
+        </div>
+        <p class="empty-title">没有找到数据</p>
+        <p class="empty-subtitle text-muted">
+            Try adjusting your search or filter to find what you're looking for.
+        </p>
+    </div>
 }

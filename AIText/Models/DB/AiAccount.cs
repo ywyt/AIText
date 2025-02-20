@@ -16,7 +16,7 @@ namespace AIText
 
         public System.String ApiKey { get; set; }
 
-        public bool? IsEnable {  get; set; }
+        public bool IsEnable {  get; set; }
 
         public DateTime? CreateTime { get; set; }
 

@@ -23,11 +23,13 @@ namespace AIText
         /// </summary>
         public int CountPerDay { get; set; }
 
+        public string AiSiteId {  get; set; }
         /// <summary>
         /// AI平台
         /// </summary>
         public string AiSite { get; set; }
 
+        public string WpSiteId {  get; set; }
         /// <summary>
         /// 需要推送到的Wordpress站点
         /// </summary>

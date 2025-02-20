@@ -35,6 +35,10 @@ namespace AIText.Controllers
         }
         public IActionResult Add()
         {
+            var aiList = Db.Queryable<AiAccount>().ToList();
+            var wpList = Db.Queryable<WpAccount>().ToList();
+            ViewData["aiList"] = aiList;
+            ViewData["wpList"] = wpList;
             return PartialView(new AiSetting());
         }
         public IActionResult DoAdd(AiSetting add)
@@ -42,6 +46,14 @@ namespace AIText.Controllers
             var rv = new ReturnValue<string>();
             add.Id = Guid.NewGuid().ToString();
             var now = DateTime.Now;
+            if (!string.IsNullOrEmpty(add.AiSiteId))
+            {
+                add.AiSite=Db.Queryable<AiAccount>().Where(t => t.Id == add.AiSiteId).First().Site;
+            }
+            if (!string.IsNullOrEmpty(add.WpSiteId))
+            {
+                add.WpSite = Db.Queryable<WpAccount>().Where(t => t.Id == add.WpSiteId).First().Site;
+            }
             add.CreateTime = now;
             add.UpdateTime = now;
             var num = Db.Insertable<AiSetting>(add).ExecuteCommand();
@@ -58,6 +70,10 @@ namespace AIText.Controllers
         }
         public IActionResult Edit(string Id)
         {
+            var aiList = Db.Queryable<AiAccount>().ToList();
+            var wpList = Db.Queryable<WpAccount>().ToList();
+            ViewData["aiList"] = aiList;
+            ViewData["wpList"] = wpList;
             var model = Db.Queryable<AiSetting>().Where(t => t.Id == Id).First();
             return PartialView(model);
         }
@@ -67,8 +83,14 @@ namespace AIText.Controllers
             var model = Db.Queryable<AiSetting>().Where(t => t.Id == edit.Id).First();
             edit.Prompt = model.Prompt;
             edit.CountPerDay=model.CountPerDay;
-            edit.AiSite=model.AiSite ;
-            edit.WpSite=model.WpSite  ;
+            if (!string.IsNullOrEmpty(edit.AiSiteId))
+            {
+                edit.AiSite = Db.Queryable<AiAccount>().Where(t => t.Id == edit.AiSiteId).First().Site;
+            }
+            if (!string.IsNullOrEmpty(edit.WpSiteId))
+            {
+                edit.WpSite = Db.Queryable<WpAccount>().Where(t => t.Id == edit.WpSiteId).First().Site;
+            }
             edit.StartDate=model.StartDate;
             edit.IsEnable=model.IsEnable;
             edit.UpdateTime=DateTime.Now;

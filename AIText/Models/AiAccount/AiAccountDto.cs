@@ -10,7 +10,7 @@ namespace AIText.Models.AiAccount
 
         public System.String ApiKey { get; set; }
 
-        public int IsEnable { get; set; }
+        public bool? IsEnable { get; set; }
 
         public DateTime? CreateTime { get; set; }
 

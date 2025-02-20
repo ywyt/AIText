@@ -9,6 +9,7 @@ namespace AIText.Models.WpAccount
         public System.String Username { get; set; }
         public System.String Password { get; set; }
         public System.String AccessKey { get; set; }
+        public bool? IsEnable { get; set; }
         public DateTime? CreateTime { get; set; }
         public DateTime? UpdateTime { get; set; }
     }

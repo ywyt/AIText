@@ -1,6 +1,7 @@
 ﻿@model AIText.AiSetting
 @{
-    
+    var wpList = ViewData["wpList"] as List<WpAccount>;
+    var aiList = ViewData["aiList"] as List<AiAccount>;
 }
 <div class="modal-content">
     <form class="form-horizontal" data-ajax="true" data-ajax-complete="ajaxRvCompleted" asp-action="DoAdd" asp-controller="AiSetting" data-ajax-method="post">
@@ -25,16 +26,34 @@
 
                 <div class="col">
                     <label class="form-label">AI平台</label>
-                    <input asp-for="AiSite" type="text" class="bg-focus form-control parsley-validated" />
-                    <span asp-validation-for="AiSite" class="text-danger"> </span>
+                    <select asp-for="AiSiteId" class="form-control">
+                        <option value=""></option>
+                        @if (aiList != null)
+                        {
+                            @foreach (var item in aiList)
+                            {
+                                <option value="@item.Id">@item.Site</option>
+                            }
+                        }
+                    </select>
+                    <span asp-validation-for="AiSiteId" class="text-danger"> </span>
                 </div>
             </div>
             <div class="row mb-3 align-items-end">
 
                 <div class="col">
                     <label class="form-label">Wordpress站点</label>
-                    <input asp-for="WpSite" type="text" class="bg-focus form-control parsley-validated" />
-                    <span asp-validation-for="WpSite" class="text-danger"> </span>
+                    <select asp-for="WpSiteId" class="form-control">
+                        <option value=""></option>
+                        @if (aiList != null)
+                        {
+                            @foreach (var item in wpList)
+                            {
+                                <option value="@item.Id">@item.Site</option>
+                            }
+                        }
+                    </select>
+                    <span asp-validation-for="WpSiteId" class="text-danger"> </span>
                 </div>
             </div>
             <div class="row mb-3 align-items-end">
