@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using System.Threading.Tasks;
 using System;
-using AIText.Models.DB;
+using AIText;
 
 namespace AIText.Controllers
 {

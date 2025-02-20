@@ -1,6 +1,6 @@
 ﻿using SqlSugar;
 using System;
-namespace AIText.Models.DB
+namespace AIText
 {
     [SugarTable("wp_account")]
     public class WpAccount
@@ -14,6 +14,7 @@ namespace AIText.Models.DB
         public System.String Username { get; set; }
         public System.String Password { get; set; }
         public System.String AccessKey { get; set; }
+        public bool? IsEnable { get; set; }
         public DateTime? CreateTime { get; set; }
         public DateTime? UpdateTime { get; set; }
     }

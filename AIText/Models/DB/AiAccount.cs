@@ -1,7 +1,7 @@
 ﻿using SqlSugar;
 using System;
 
-namespace AIText.Models.DB
+namespace AIText
 {
     [SugarTable("ai_account")]
     public class AiAccount
@@ -16,7 +16,7 @@ namespace AIText.Models.DB
 
         public System.String ApiKey { get; set; }
 
-        public int IsEnable {  get; set; }
+        public bool? IsEnable {  get; set; }
 
         public DateTime? CreateTime { get; set; }
 
