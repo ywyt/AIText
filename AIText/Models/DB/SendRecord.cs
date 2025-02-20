@@ -14,7 +14,7 @@ namespace AIText
         /// 主键
         /// </summary>
         [SugarColumn(IsPrimaryKey = true)]
-        public string Id { get; set; }
+        public int Id { get; set; }
 
         public string Prompt { get; set; }
 

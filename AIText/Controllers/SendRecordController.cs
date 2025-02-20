@@ -39,7 +39,6 @@ namespace AIText.Controllers
         public IActionResult DoAdd(SendRecord add)
         {
             var rv = new ReturnValue<string>();
-            add.Id = Guid.NewGuid().ToString();
             var now = DateTime.Now;
             add.CreateTime = now;
             add.UpdateTime = now;
@@ -55,7 +54,7 @@ namespace AIText.Controllers
                 return Json(rv);
             }
         }
-        public IActionResult Edit(string Id)
+        public IActionResult Edit(int Id)
         {
             var model = Db.Queryable<SendRecord>().Where(t => t.Id == Id).First();
             return PartialView(model);
@@ -83,7 +82,7 @@ namespace AIText.Controllers
                 return Json(rv);
             }
         }
-        public IActionResult DoDelete(string Id)
+        public IActionResult DoDelete(int Id)
         {
             var rv = new ReturnValue<string>();
             Db.Deleteable<SendRecord>().Where(it => it.Id == Id).ExecuteCommand();
