@@ -1,4 +1,5 @@
 ﻿using RestSharp;
+using SqlSugar.Extensions;
 using System;
 using System.Threading.Tasks;
 
@@ -8,7 +9,7 @@ namespace AIText
     {
         public static async Task<string> GetAccessToken(string site, string user, string pwd)
         {
-            var options = new RestClientOptions("site");
+            var options = new RestClientOptions(site);
             var client = new RestClient(options);
             var request = new RestRequest("/wp-json/api/v1/token", Method.Post);
             request.AlwaysMultipartFormData = true;
@@ -28,7 +29,7 @@ namespace AIText
             else
             {
                 Console.WriteLine(response.StatusCode);
-                return response.StatusCode + "|" + response.ErrorMessage;
+                return response.StatusCode + "|" + response.ErrorMessage + response.Content;
             }
         }
 
@@ -54,7 +55,7 @@ namespace AIText
             else
             {
                 Console.WriteLine(response.StatusCode);
-                return response.StatusCode + "|" + response.ErrorMessage;
+                return response.StatusCode.ObjToInt() + "|" + response.ErrorMessage + response.Content;
             }
         }
     }

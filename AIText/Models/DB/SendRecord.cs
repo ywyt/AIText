@@ -16,6 +16,7 @@ namespace AIText
         [SugarColumn(IsPrimaryKey = true)]
         public int Id { get; set; }
 
+        public string SettingId { get; set; }
         public string Prompt { get; set; }
 
         public string Title { get; set; }

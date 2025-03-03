@@ -1,6 +1,7 @@
 ﻿using AIText.Models.AiSetting;
 using AIText.Models.SendRecord;
 using Microsoft.AspNetCore.Mvc;
+using NetTaste;
 using SqlSugar;
 using System;
 using System.Threading.Tasks;
@@ -123,5 +124,97 @@ namespace AIText.Controllers
 
             return query;
         }
+
+
+        #region 生成文章，同步WP
+
+        public async Task<IActionResult> SendAi(string Id)
+        {
+            var model = Db.Queryable<AiSetting>().First(o => o.Id == Id);
+
+            if (!string.IsNullOrEmpty(model.AiSiteId))
+            {
+                var aimodel = Db.Queryable<AiAccount>().First(o => o.Id == model.AiSiteId);
+                if (aimodel != null && aimodel.Site?.Contains("volce") == true)
+                {
+                    var content = await Volcengine.ChatCompletions(aimodel.ApiKey, model.Prompt);
+                    if (content.Contains("|"))
+                    {
+                        return Ok("生成文章出错" + content.Substring(content.IndexOf("|")));
+                    }
+                    SendRecord sendRecord = new SendRecord
+                    {
+                        SettingId = model.Id,
+                        Prompt = model.Prompt,
+                        Title = "AI GEN",
+                        Content = content,
+                        IsSync = false,
+                        SyncSite = model.WpSite,
+                        SyncTime = null,
+                        CreateTime = DateTime.Now,
+                        UpdateTime = null
+                    };
+                    Db.Insertable(sendRecord).ExecuteCommand();
+                }
+            }
+            return Ok();
+        }
+
+        public async Task<IActionResult> SyncWp(string Id)
+        {
+            var model = Db.Queryable<AiSetting>().First(o => o.Id == Id);
+
+            if (model != null)
+            {
+                var record = Db.Queryable<SendRecord>().Where(o => o.IsSync == false).OrderBy(o => o.CreateTime).First();
+                if (record != null)
+                {
+                    WpAccount wp = Db.Queryable<WpAccount>().First(o => o.Id == model.WpSiteId);
+                    if (wp != null)
+                    {
+                        if (string.IsNullOrEmpty(wp.AccessKey))
+                        {
+                            string token = await WordpressApi.GetAccessToken(wp.Site, wp.Username, wp.Password);
+                            if (token.Contains("|"))
+                            {
+                                return Ok("获取WP站点的token出错");
+                            }
+                            wp.AccessKey = token;
+                            Db.Updateable<WpAccount>().SetColumns(o => o.AccessKey == token).Where(o => o.Id == wp.Id).ExecuteCommand();
+                        }
+                        var sendRes = await WordpressApi.PostToCreate(wp.Site, wp.AccessKey, record.Title, record.Content);
+                        if (sendRes.Contains("|"))
+                        {
+                            if (sendRes.StartsWith("403|") || sendRes.StartsWith("401|"))
+                            {
+                                string token = await WordpressApi.GetAccessToken(wp.Site, wp.Username, wp.Password);
+                                if (token.Contains("|"))
+                                {
+                                    return Ok("获取WP站点的token出错");
+                                }
+                                wp.AccessKey = token;
+                                Db.Updateable<WpAccount>().SetColumns(o => o.AccessKey == token).Where(o => o.Id == wp.Id).ExecuteCommand();
+                                sendRes = await WordpressApi.PostToCreate(wp.Site, wp.AccessKey, record.Title, record.Content);
+                                if (sendRes.Contains("|"))
+                                {
+                                    return Ok("发送失败" + sendRes.Substring(sendRes.IndexOf("|")));
+                                }
+                                else
+                                {
+                                    Db.Updateable<SendRecord>().SetColumns(o => new SendRecord { IsSync = true, SyncTime = DateTime.Now }).Where(o => o.Id == record.Id).ExecuteCommand();
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Db.Updateable<SendRecord>().SetColumns(o => new SendRecord { IsSync = true, SyncTime = DateTime.Now }).Where(o => o.Id == record.Id).ExecuteCommand();
+                        }
+                    }
+                }
+            }
+            return Ok();
+        }
+
+        #endregion
     }
 }

@@ -1,4 +1,4 @@
-﻿using AIText.Models.AiAccount;
+﻿using AIText.Models.BusinessKeyword;
 using commons.util;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,10 +14,10 @@ using System.Threading.Tasks;
 
 namespace AIText.Controllers
 {
-    public class AiAccountController : BaseController
+    public class BusinessKeywordController : BaseController
     {
         private readonly SqlSugarClient Db;
-        public AiAccountController(SqlSugarClient _Db)
+        public BusinessKeywordController(SqlSugarClient _Db)
         {
             Db = _Db;
         }
@@ -25,13 +25,13 @@ namespace AIText.Controllers
         {
             return View();
         }
-        public async Task<IActionResult> DoListAsync(AiAccountSearch search)
+        public async Task<IActionResult> DoListAsync(BusinessKeywordSearch search)
         {
             await TryUpdateModelAsync(search.Pager);
             var query = SearchSql(search);
-            var pageList = new commons.util.PageList<AiAccountDto>();
+            var pageList = new commons.util.PageList<BusinessKeywordDto>();
             int count = 0;
-            pageList.List = query.Select<AiAccountDto>().ToPageList(search.Pager.PageIndex, search.Pager.PageSize, ref count);
+            pageList.List = query.Select<BusinessKeywordDto>().ToPageList(search.Pager.PageIndex, search.Pager.PageSize, ref count);
             pageList.PagerModel = new commons.util.PageModel()
             {
                 PageSize = search.Pager.PageSize,
@@ -43,16 +43,16 @@ namespace AIText.Controllers
         public IActionResult Add()
         {
 
-            return PartialView(new AiAccount());
+            return PartialView(new BusinessKeyword());
         }
-        public IActionResult DoAdd(AiAccount add)
+        public IActionResult DoAdd(BusinessKeyword add)
         {
             var rv = new ReturnValue<string>();
             add.Id = Guid.NewGuid().ToString();
             var now = DateTime.Now;
             add.CreateTime = now;
             add.UpdateTime = now;
-            var num = Db.Insertable<AiAccount>(add).ExecuteCommand();
+            var num = Db.Insertable<BusinessKeyword>(add).ExecuteCommand();
             if (num == 1)
             {
                 rv.True("新建成功");
@@ -66,16 +66,16 @@ namespace AIText.Controllers
         }
         public IActionResult Edit(string Id)
         {
-            var model = Db.Queryable<AiAccount>().Where(t => t.Id == Id).First();
+            var model = Db.Queryable<BusinessKeyword>().Where(t => t.Id == Id).First();
             return PartialView(model);
         }
-        public IActionResult DoEdit(AiAccount edit)
+        public IActionResult DoEdit(BusinessKeyword edit)
         {
             var rv = new ReturnValue<string>();
-            var model = Db.Queryable<AiAccount>().Where(t => t.Id == edit.Id).First();
+            var model = Db.Queryable<BusinessKeyword>().Where(t => t.Id == edit.Id).First();
 
             edit.UpdateTime = DateTime.Now;
-            var num = Db.Updateable<AiAccount>(edit).ExecuteCommand();
+            var num = Db.Updateable<BusinessKeyword>(edit).ExecuteCommand();
             if (num == 1)
             {
                 rv.True("修改成功");
@@ -90,16 +90,16 @@ namespace AIText.Controllers
         public IActionResult DoDelete(string Id)
         {
             var rv = new ReturnValue<string>();
-            Db.Deleteable<AiAccount>().Where(it => it.Id == Id).ExecuteCommand();
+            Db.Deleteable<BusinessKeyword>().Where(it => it.Id == Id).ExecuteCommand();
             rv.True("删除完成");
             return Json(rv);
         }
-        private ISugarQueryable<AiAccount> SearchSql(AiAccountSearch search)
+        private ISugarQueryable<BusinessKeyword> SearchSql(BusinessKeywordSearch search)
         {
-            var query = Db.Queryable<AiAccount>();
-            if (!string.IsNullOrEmpty(search.Site))
+            var query = Db.Queryable<BusinessKeyword>();
+            if (!string.IsNullOrEmpty(search.Keyword))
             {
-                query.Where(t => t.Site.Contains(search.Site));
+                query.Where(t => t.Keyword.Contains(search.Keyword));
             }
 
             return query;
@@ -116,12 +116,12 @@ namespace AIText.Controllers
         public async Task<IActionResult> ToImportAsync(IFormFile excelfile)
         {
             if (excelfile == null)
-                return PartialView(new List<commons.import.ImportAiAccountDto>());
-            var list = await ExcelHelper<commons.import.ImportAiAccountDto>.ImportFromExcel(excelfile);
+                return PartialView(new List<commons.import.ImportBusinessKeywordDto>());
+            var list = await ExcelHelper<commons.import.ImportBusinessKeywordDto>.ImportFromExcel(excelfile);
 
             #region 验证
 
-            List<commons.import.ImportAiAccountDto> errlist = new List<commons.import.ImportAiAccountDto>();
+            List<commons.import.ImportBusinessKeywordDto> errlist = new List<commons.import.ImportBusinessKeywordDto>();
 
             int loopi = 0;
             foreach (var item in list)
@@ -141,44 +141,52 @@ namespace AIText.Controllers
         }
 
         [HttpPost]
-        public IActionResult DoImport1(List<commons.import.ImportAiAccountDto> imports)
+        public IActionResult DoImport1(List<commons.import.ImportBusinessKeywordDto> imports)
         {
             ReturnValue<string> rv = new ReturnValue<string>();
             rv.status = true;
             List<string> errMsg = new List<string>();
-            List<AiAccount> insertList = new List<AiAccount>();
-            List<AiAccount> updateList = new List<AiAccount>();
+            List<BusinessKeyword> insertList = new List<BusinessKeyword>();
+            List<BusinessKeyword> updateList = new List<BusinessKeyword>();
             foreach (var item in imports)
             {
-                if (string.IsNullOrEmpty(item.密钥))
+                if (string.IsNullOrEmpty(item.Keyword))
                 {
                     rv.status = false;
-                    errMsg.Add($"{item.Idx}密钥不能为空");
+                    errMsg.Add($"{item.Idx}关键词不能为空");
                     continue;
                 }
-                if (string.IsNullOrEmpty(item.主键))
+                if (string.IsNullOrEmpty(item.Id))
                 {
-                    insertList.Add(new AiAccount
+                    insertList.Add(new BusinessKeyword
                     {
                         Id = Guid.NewGuid().ToString(),
-                        Site = item.站点,
-                        ApiKey = item.密钥,
-                        IsEnable = item.是否启用 == "是" ? true : false,
+                        Keyword = item.Keyword,
+                        Intent = item.Intent,
+                        Volume = item.Volume,
+                        PotentialTraffic = item.PotentialTraffic,
+                        KeywordDifficulty = item.KeywordDifficulty,
+                        CPC = item.CPC,
                         CreateTime = DateTime.Now,
                         UpdateTime = null
                     });
                 }
                 else
                 {
-                    var model = Db.Queryable<AiAccount>().Where(t => t.Id == item.主键).First();
+                    var model = Db.Queryable<BusinessKeyword>().Where(t => t.Id == item.Id).First();
                     if (model == null)
                     {
                         rv.status = false;
-                        errMsg.Add($"{item.Idx}账号不存在");
+                        errMsg.Add($"{item.Idx}不存在");
                         continue;
                     }
-                    model.ApiKey = item.密钥;
-                    model.IsEnable = item.是否启用 == "是" ? true : false;
+                    model.Keyword = item.Keyword;
+                    model.Intent = item.Intent;
+                    model.Volume = item.Volume;
+                    model.PotentialTraffic = item.PotentialTraffic;
+                    model.KeywordDifficulty = item.KeywordDifficulty;
+                    model.CPC = item.CPC;
+
                     model.UpdateTime = DateTime.Now;
                     updateList.Add(model);
                 }
@@ -205,9 +213,9 @@ namespace AIText.Controllers
             return Json(rv);
         }
 
-        public IActionResult DoExport(AiAccountSearch search)
+        public IActionResult DoExport(BusinessKeywordSearch search)
         {
-            var list = SearchSql(search).Select<ExportAiAccountDto>().ToList();
+            var list = SearchSql(search).Select<ExportBusinessKeywordDto>().ToList();
             //foreach (var item in list)
             //{
             //    if (!string.IsNullOrEmpty(item.ImageUrl))
@@ -233,12 +241,12 @@ namespace AIText.Controllers
                 return Ok("没有数据导出，请返回修改查询条件");
             }
             //var exportHead = commons.import.ExpportPreProduce.GetHeadColums();
-            var rvList = new commons.import.ExportAiAccount().SetExport(list);
+            var rvList = new commons.import.ExportBusinessKeyword().SetExport(list);
 
             // 转换为XSSFWorkbook
-            var xss = ExcelHelper<commons.import.ExportAiAccountTemp>.CreateExportXss(rvList, null, null);
+            var xss = ExcelHelper<commons.import.ExportBusinessKeywordTemp>.CreateExportXss(rvList, null, null);
 
-            #region 重新设置图片的单元格大小
+            #region 重新设置单元格大小
 
             // 默认只有一个sheet
             var sheet = xss.GetSheetAt(0);

@@ -1,0 +1,79 @@
+﻿@model List<commons.import.ImportWpAccountDto>
+@{
+    
+}
+
+@if (Model.Count != 0)
+{
+    <div class="card-header">
+        @* <h4 class="card-title"></h4> *@
+    </div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+                <tr>
+                    <th>主键</th>
+                    <th>站点</th>
+                    <th>密钥</th>
+                    <th>是否启用</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var loopi = 0;
+                }
+                @foreach (var info in Model)
+                {
+                    <tr>
+                        <td class="text-muted">
+                            <input type="hidden" name="[@loopi].主键" value="@info.主键" />
+                            @info.主键
+                        </td>
+
+                        <td class="text-muted">
+                            <input type="hidden" name="[@loopi].站点" value="@info.站点" />
+                            @info.站点
+                        </td>
+
+                        <td class="text-muted">
+                            <input type="hidden" name="[@loopi].用户名" value="@info.用户名" />
+                            @info.用户名
+                        </td>
+
+                        <td class="text-muted">
+                            <input type="hidden" name="[@loopi].密码" value="@info.密码" />
+                            @info.密码
+                        </td>
+
+                        <td class="text-muted">
+                            <input type="hidden" name="[@loopi].是否启用" value="@info.是否启用" />
+                            @info.是否启用
+                        </td>
+                    </tr>
+                    @if (!string.IsNullOrEmpty(info.ErrMsg))
+                    {
+                        <tr style="color:red; @(loopi%2==0 ? "background-color:#efffff;": "")">
+                            <td></td>
+                            <td colspan="8">@info.ErrMsg</td>
+
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (Model.Count == 0)
+{
+
+    <div class="empty">
+        <div class="empty-img">
+            <img src="~/static/illustrations/undraw_printing_invoices_5r4r.svg" height="128" alt="">
+        </div>
+        <p class="empty-title">没有数据</p>
+        <p class="empty-subtitle text-muted">
+            Try to change your Excel file.
+        </p>
+    </div>
+}

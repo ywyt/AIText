@@ -22,13 +22,15 @@ namespace AIText
             request.AddHeader("Authorization", $"Bearer {apikey}");
             var sendBody = new
             {
-                model = "",
+                model = "deepseek-v3-241226",
                 messages = new[]
                 {
                     new { role = "system", content = "You are a helpful assistant." },
                     new { role = "user", content = prompt }
                 }
             };
+            //string body = Newtonsoft.Json.JsonConvert.SerializeObject(sendBody);
+            //request.AddBody(body);
             request.AddJsonBody(sendBody);
             RestResponse response = await client.ExecuteAsync(request);
             if (response.IsSuccessStatusCode)
@@ -50,7 +52,7 @@ namespace AIText
             else
             {
                 Console.WriteLine(response.StatusCode);
-                return response.StatusCode + "|" + response.ErrorMessage;
+                return response.StatusCode + "|" + response.ErrorMessage + response.Content;
             }
         }
     }

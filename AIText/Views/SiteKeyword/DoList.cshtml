@@ -1,4 +1,4 @@
-﻿@model commons.util.PageList<AIText.Models.AiSetting.AiSettingDto>
+﻿@model commons.util.PageList<AIText.Models.SiteKeyword.SiteKeywordDto>
 @if (Model.List?.Count > 0)
 {
     <div class="card-header">
@@ -8,12 +8,16 @@
         <table class="table table-vcenter card-table">
             <thead>
                 <tr>
-                    <th>提示词</th>
-                    <th>每天创建的文章数</th>
-                    <th>AI平台</th>
-                    <th>Wordpress站点</th>
-                    <th>是否启用</th>
-                    
+                    <th>ID</th>
+                    <th>关键词</th>
+                    <th>当前排名</th>
+                    <th>之前排名</th>
+                    <th>搜索量</th>
+                    <th>每次点击成本USD</th>
+                    <th>网址</th>
+                    <th>流量</th>
+                    <th>流量占比</th>
+                    <th>流量成本</th>
                     <th class="w-1"></th>
                 </tr>
             </thead>
@@ -22,32 +26,42 @@
                 {
                     <tr>
                         <td class="text-muted">
-                            @info.Prompt
+                            @info.Id
                         </td>
                         <td class="text-muted">
-                            @info.CountPerDay
+                            @info.Keyword
                         </td>
                         <td class="text-muted">
-                            @info.AiSite
+                            @info.Position
                         </td>
                         <td class="text-muted">
-                            @info.WpSite
+                            @info.PreviousPosition
                         </td>
                         <td class="text-muted">
-                            @(info.IsEnable==true?"是":"否")
+                            @info.SearchVolume
                         </td>
+                        <td class="text-muted">
+                            @info.CPC
+                        </td>
+                        <td class="text-muted">
+                            @info.URL
+                        </td>
+                        <td class="text-muted">
+                            @info.Traffic
+                        </td>
+                        <td class="text-muted">
+                            @info.TrafficPercent
+                        </td>
+                        <td class="text-muted">
+                            @info.TrafficCost
+                        </td>
+
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">
-                                <a data-src="@Url.Content("~/AiSetting/SendAi?Id=" + info.Id)" class="btn btn-warning">
-                                    生文
-                                </a>
-                                <a data-src="@Url.Content("~/AiSetting/SyncWp?Id=" + info.Id)" class="btn btn-warning">
-                                    同步
-                                </a>
-                                <a data-src="@Url.Content("~/AiSetting/Edit?Id="+info.Id)"   class="btn btn-white">
+                                <a data-src="@Url.Content("~/SiteKeyword/Edit?Id="+info.Id)" class="btn btn-white">
                                     查看
                                 </a>
-                                <a data-confirm="/AiSetting/DoDelete?Id=@info.Id" title="是否删除" class="btn btn-white">
+                                <a data-confirm="/SiteKeyword/DoDelete?Id=@info.Id" title="是否删除" class="btn btn-white">
                                     删除
                                 </a>
                             </div>

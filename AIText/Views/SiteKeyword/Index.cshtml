@@ -1,18 +1,18 @@
-﻿@model AIText.Models.AiAccount.AiAccountSearch
+﻿@model AIText.Models.SiteKeyword.SiteKeywordSearch
 <div class="page-header d-print-none ">
     <div class="row align-items-center mb-2">
         <div class="col">
             <h2 class="page-title">
-                wordpress账号管理
+                站点关键词管理
             </h2>
         </div>
         <div class="col-auto ms-auto d-print-none">
             <div class="btn-list">
-                <a data-src="/AiAccount/Add" title="创建账号" class="btn btn-primary">
+                <a data-src="/SiteKeyword/Add" title="创建站点关键词" class="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     添加
                 </a>
-                <a href="/AiAccount/Import" title="导入账号" class="btn btn-primary d-none d-sm-inline-block">
+                <a href="/SiteKeyword/Import" title="导入站点关键词" class="btn btn-primary d-none d-sm-inline-block">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-database-import" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                         <path d="M12 6m-8 0a8 3 0 1 0 16 0a8 3 0 1 0 -16 0"></path>
@@ -21,7 +21,7 @@
                     </svg>
                     导入
                 </a>
-                <a onclick="DoExport()" title="导出账号" class="btn btn-primary d-none d-sm-inline-block">
+                <a onclick="DoExport()" title="导出站点关键词" class="btn btn-primary d-none d-sm-inline-block">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-export" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                         <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
@@ -37,7 +37,7 @@
 
 <div class="row  justify-content-center">
     <div class="col-12 col-lg-12  ">
-        <form data-ajax="true" data-ajax-update="#divreplace" data-ajax-mode="replace" asp-action="DoList" asp-controller="AiAccount" data-ajax-method="post" method="post" class="card">
+        <form data-ajax="true" data-ajax-update="#divreplace" data-ajax-mode="replace" asp-action="DoList" asp-controller="SiteKeyword" data-ajax-method="post" method="post" class="card">
             <div class="card-header">
                 <div class="row" style="width:100%;">
                     <h4 class="card-title col">搜索</h4>
@@ -85,7 +85,7 @@
         var formData = $("#newform").serializeArray();
         // 改用post传参获取文件下载，避免参数过长问题
         $.ajax({
-            url: "@Url.Action("DoExport", "AiAccount")",
+            url: "@Url.Action("DoExport", "SiteKeyword")",
             type: "POST",
             data: formData,
             xhrFields: {
