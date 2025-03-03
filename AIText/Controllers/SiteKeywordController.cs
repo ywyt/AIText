@@ -141,6 +141,8 @@ namespace AIText.Controllers
         }
 
         [HttpPost]
+        // ASP.NET Core在FormReader内强制将键/值的长度限制限制为2048，改变这个大小以便传入更大的表单内容
+        [RequestFormLimits(ValueCountLimit = ushort.MaxValue)]
         public IActionResult DoImport1(List<commons.import.ImportSiteKeywordDto> imports)
         {
             ReturnValue<string> rv = new ReturnValue<string>();
@@ -150,48 +152,51 @@ namespace AIText.Controllers
             List<SiteKeyword> updateList = new List<SiteKeyword>();
             foreach (var item in imports)
             {
-                if (string.IsNullOrEmpty(item.关键词))
+                if (string.IsNullOrEmpty(item.Keyword))
                 {
                     rv.status = false;
                     errMsg.Add($"{item.Idx}关键词不能为空");
                     continue;
                 }
-                if (string.IsNullOrEmpty(item.ID))
+                if (string.IsNullOrEmpty(item.Id))
                 {
                     insertList.Add(new SiteKeyword
                     {
                         Id = Guid.NewGuid().ToString(),
-                        Keyword = item.关键词,
-                        Position = item.当前排名,
-                        PreviousPosition = item.之前排名,
-                        SearchVolume = item.搜索量,
-                        CPC = item.每次点击成本USD,
-                        URL = item.网址,
-                        Traffic = item.流量,
-                        TrafficPercent = item.流量占比,
-                        TrafficCost = item.流量成本,
+                        Keyword = item.Keyword,
+                        Position = item.Position,
+                        PreviousPosition = item.PreviousPosition,
+                        SearchVolume = item.SearchVolume,
+                        KeywordDifficulty = item.KeywordDifficulty,
+                        CPC = item.CPC,
+                        URL = item.URL,
+                        Traffic = item.Traffic,
+                        TrafficPercent = item.TrafficPercent,
+                        TrafficCost = item.TrafficCost,
                         CreateTime = DateTime.Now,
                         UpdateTime = null
                     });
                 }
                 else
                 {
-                    var model = Db.Queryable<SiteKeyword>().Where(t => t.Id == item.ID).First();
+                    var model = Db.Queryable<SiteKeyword>().Where(t => t.Id == item.Id).First();
                     if (model == null)
                     {
                         rv.status = false;
                         errMsg.Add($"{item.Idx}不存在");
                         continue;
                     }
-                    model.Keyword = item.关键词;
-                    model.Position = item.当前排名;
-                    model.PreviousPosition = item.之前排名;
-                    model.SearchVolume = item.搜索量;
-                    model.CPC = item.每次点击成本USD;
-                    model.URL = item.网址;
-                    model.Traffic = item.流量;
-                    model.TrafficPercent = item.流量占比;
-                    model.TrafficCost = item.流量成本;
+                    model.Keyword = item.Keyword;
+                    model.Position = item.Position;
+                    model.PreviousPosition = item.PreviousPosition;
+                    model.SearchVolume = item.SearchVolume;
+                    model.KeywordDifficulty = item.KeywordDifficulty;
+                    model.CPC = item.CPC;
+                    model.URL = item.URL;
+                    model.Traffic = item.Traffic;
+                    model.TrafficPercent = item.TrafficPercent;
+                    model.TrafficCost = item.TrafficCost;
+
                     model.UpdateTime = DateTime.Now;
                     updateList.Add(model);
                 }

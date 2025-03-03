@@ -141,9 +141,17 @@ namespace AIText.Controllers
         }
 
         [HttpPost]
+        // ASP.NET Core在FormReader内强制将键/值的长度限制限制为2048，改变这个大小以便传入更大的表单内容
+        [RequestFormLimits(ValueCountLimit = ushort.MaxValue)]
         public IActionResult DoImport1(List<commons.import.ImportBusinessKeywordDto> imports)
         {
             ReturnValue<string> rv = new ReturnValue<string>();
+
+            if ((imports?.Count > 0) == false)
+            {
+                rv.False("参数错误");
+                return Json(rv);
+            }
             rv.status = true;
             List<string> errMsg = new List<string>();
             List<BusinessKeyword> insertList = new List<BusinessKeyword>();

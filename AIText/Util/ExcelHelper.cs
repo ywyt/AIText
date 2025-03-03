@@ -415,6 +415,30 @@ namespace commons.util
         private static ConcurrentDictionary<string, object> dictCache = new ConcurrentDictionary<string, object>();
 
         /// <summary>
+        /// 判断一行是否为空（所有单元格都为空或仅包含空白字符）
+        /// </summary>
+        static bool IsRowEmpty(IRow row)
+        {
+            if (row == null) return true; // 行对象本身为空
+
+            foreach (ICell cell in row.Cells) // 遍历所有单元格
+            {
+                if (cell.CellType != CellType.Blank) // 如果单元格不是空白
+                {
+                    if (cell.CellType == CellType.String && !string.IsNullOrWhiteSpace(cell.StringCellValue))
+                    {
+                        return false; // 发现非空字符串单元格
+                    }
+                    else if (cell.CellType != CellType.String)
+                    {
+                        return false; // 发现非空的非字符串单元格（数字、日期等）
+                    }
+                }
+            }
+            return true; // 所有单元格都是空的
+        }
+
+        /// <summary>
         /// 将excel文件转换成list
         /// </summary>
         /// <param name="list"></param>
@@ -439,7 +463,7 @@ namespace commons.util
             for (int i = (sheet.FirstRowNum + 1); i < sheet.LastRowNum + 1; i++)
             {
                 IRow row = sheet.GetRow(i);
-                if (row == null)
+                if (IsRowEmpty(row))
                 {
                     continue;
                 }
