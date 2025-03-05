@@ -1,0 +1,147 @@
+﻿@model AIText.Models.PaintAccount.PaintAccountSearch
+<div class="page-header d-print-none ">
+    <div class="row align-items-center mb-2">
+        <div class="col">
+            <h2 class="page-title">
+                wordpress账号管理
+            </h2>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+                <a data-src="/PaintAccount/Add" title="创建账号" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    添加
+                </a>
+                <a href="/PaintAccount/Import" title="导入账号" class="btn btn-primary d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-database-import" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <path d="M12 6m-8 0a8 3 0 1 0 16 0a8 3 0 1 0 -16 0"></path>
+                        <path d="M4 6v8m5.009 .783c.924 .14 1.933 .217 2.991 .217c4.418 0 8 -1.343 8 -3v-6"></path>
+                        <path d="M11.252 20.987c.246 .009 .496 .013 .748 .013c4.418 0 8 -1.343 8 -3v-6m-18 7h7m-3 -3l3 3l-3 3"></path>
+                    </svg>
+                    导入
+                </a>
+                <a onclick="DoExport()" title="导出账号" class="btn btn-primary d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-export" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                        <path d="M11.5 21h-4.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v5m-5 6h7m-3 -3l3 3l-3 3"></path>
+                    </svg>
+                    导出
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row  justify-content-center">
+    <div class="col-12 col-lg-12  ">
+        <form data-ajax="true" data-ajax-update="#divreplace" data-ajax-mode="replace" asp-action="DoList" asp-controller="PaintAccount" data-ajax-method="post" method="post" class="card">
+            <div class="card-header">
+                <div class="row" style="width:100%;">
+                    <h4 class="card-title col">搜索</h4>
+                    <div class="col-auto ms-auto">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-2">
+                        <div class="subheader mb-2 mt-2">网站</div>
+                        <div>
+                            <input type="text" name="Site" class="form-control" placeholder="" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div class="subheader mb-2 mt-2" style="visibility:hidden">占位</div>
+                        <div>
+                            <button class="btn btn-primary w-100">
+                                查找
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-9 row">
+                    </div>
+                </div>
+            </div>
+
+        </form>
+
+    </div>
+
+    <div class="col-12  col-lg-12 mt-1">
+        <div class="card" id="divreplace">
+            @Html.Action("DoList", Model)
+        </div>
+    </div>
+</div>
+
+<script>
+    var DoExport = function () {
+        var formData = $("#newform").serializeArray();
+        // 改用post传参获取文件下载，避免参数过长问题
+        $.ajax({
+            url: "@Url.Action("DoExport", "PaintAccount")",
+            type: "POST",
+            data: formData,
+            xhrFields: {
+                responseType: 'blob' // to avoid binary data being mangled on charset conversion
+            },
+            success: function (blob, status, xhr) {
+                debugger;
+                // check for a filename
+                var filename = "";
+                var disposition = xhr.getResponseHeader('Content-Disposition');
+                // "attachment; filename=____-202303201431.xlsx; filename*=UTF-8''%E9%A2%84%E9%87%87%E8%B4%AD%E8%A1%A8-202303201431.xlsx"
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    //var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    // UTF8文件名部分的正则表达式
+                    filenameRegex = /filename\*=UTF-8''([^;=\n]*((['"]).*?\2|[^;\n]*))/;
+                    var matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+                    if (filename)
+                        // 需要将UTF-8编码转换为UNICODE
+                        filename = decodeURIComponent(filename);
+                }
+
+                if (typeof window.navigator.msSaveBlob !== 'undefined') {
+                    // IE workaround for "HTML7007: One or more blob URLs were revoked by closing the blob for which they were created. These URLs will no longer resolve as the data backing the URL has been freed."
+                    window.navigator.msSaveBlob(blob, filename);
+                } else {
+                    var URL = window.URL || window.webkitURL;
+                    var downloadUrl = URL.createObjectURL(blob);
+                    if (filename) {
+                        // use HTML5 a[download] attribute to specify filename
+                        var a = document.createElement("a");
+                        // safari doesn't support this yet
+                        if (typeof a.download === 'undefined') {
+                            window.location.href = downloadUrl;
+                        } else {
+                            a.href = downloadUrl;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                        }
+                    } else {
+                        // 返回错误文本时
+                        if (blob.type === "text/plain") {
+                            // 调用 text() 方法并返回一个 promise
+                            blob.text().then(function (text) {
+                                // 处理文本内容
+                                $.tipsError(text);
+                            });
+                        } else {
+                            window.location.href = downloadUrl;
+                        }
+                    }
+
+                    setTimeout(function () { URL.revokeObjectURL(downloadUrl); }, 100); // cleanup
+                }
+            }
+        });
+    };
+</script>

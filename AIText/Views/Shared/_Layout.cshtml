@@ -30,7 +30,7 @@
                     <a href="/">
                         <img src="~/static/logo.svg?1" width="110" height="32" alt="Tabler" class="navbar-brand-image">
                     </a>
-                    <a href="/" style="padding-left:10px; text-decoration:none;">邮件管理后台</a>
+                    <a href="/" style="padding-left:10px; text-decoration:none;">AI自动发文</a>
                 </h1>
 
                 <div class="navbar-nav flex-row order-md-last">
@@ -121,6 +121,16 @@
                                     </span>
                                     <span class="nav-link-title">
                                         站点关键词
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item   @(Url.ActionContext.HttpContext.Request.Path.Value == "/PaintAccount" ? "active" : "") ">
+                                <a class="nav-link" href="@Url.Content("~/PaintAccount")">
+                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
+                                    </span>
+                                    <span class="nav-link-title">
+                                        绘图账号
                                     </span>
                                 </a>
                             </li>

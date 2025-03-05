@@ -1,0 +1,5 @@
+﻿@model string
+@if (Model.StartsWith("http"))
+{
+    <img src="@Model" />
+}
