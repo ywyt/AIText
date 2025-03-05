@@ -6,12 +6,12 @@ using System.Text;
 
 namespace model.excel
 {
-    public class ExportWpAccountSearch : List<ExportWpAccountDto>
+    public class ExportSiteAccountSearch : List<ExportSiteAccountDto>
     {
         public int? IsDesignImage { get; set; }
         public string SkuId { get; set; }
     }
-    public class ExportWpAccountDto
+    public class ExportSiteAccountDto
     {
         public string Id { get; set; }
         public string Site { get; set; }

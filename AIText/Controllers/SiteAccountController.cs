@@ -1,4 +1,4 @@
-﻿using AIText.Models.WpAccount;
+﻿using AIText.Models.SiteAccount;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using System.Threading.Tasks;
@@ -7,10 +7,10 @@ using AIText;
 
 namespace AIText.Controllers
 {
-    public class WpAccountController : BaseController
+    public class SiteAccountController : BaseController
     {
         private readonly SqlSugarClient Db;
-        public WpAccountController(SqlSugarClient _Db)
+        public SiteAccountController(SqlSugarClient _Db)
         {
             Db = _Db;
         }
@@ -18,13 +18,13 @@ namespace AIText.Controllers
         {
             return View();
         }
-        public async Task<IActionResult> DoListAsync(WpAccountSearch search)
+        public async Task<IActionResult> DoListAsync(SiteAccountSearch search)
         {
             await TryUpdateModelAsync(search.Pager);
             var query = SearchSql(search);
-            var pageList = new commons.util.PageList<WpAccountDto>();
+            var pageList = new commons.util.PageList<SiteAccountDto>();
             int count = 0;
-            pageList.List = query.Select<WpAccountDto>().ToPageList(search.Pager.PageIndex, search.Pager.PageSize, ref count);
+            pageList.List = query.Select<SiteAccountDto>().ToPageList(search.Pager.PageIndex, search.Pager.PageSize, ref count);
             pageList.PagerModel = new commons.util.PageModel()
             {
                 PageSize = search.Pager.PageSize,
@@ -35,16 +35,16 @@ namespace AIText.Controllers
         }
         public IActionResult Add()
         {
-            return PartialView(new WpAccount());
+            return PartialView(new SiteAccount());
         }
-        public IActionResult DoAdd(WpAccount add)
+        public IActionResult DoAdd(SiteAccount add)
         {
             var rv = new ReturnValue<string>();
             add.Id = Guid.NewGuid().ToString();
             var now = DateTime.Now;
             add.CreateTime = now;
             add.UpdateTime = now;
-            var num = Db.Insertable<WpAccount>(add).ExecuteCommand();
+            var num = Db.Insertable<SiteAccount>(add).ExecuteCommand();
             if (num == 1)
             {
                 rv.True("新建成功");
@@ -58,16 +58,16 @@ namespace AIText.Controllers
         }
         public IActionResult Edit(string Id)
         {
-            var model = Db.Queryable<WpAccount>().Where(t => t.Id == Id).First();
+            var model = Db.Queryable<SiteAccount>().Where(t => t.Id == Id).First();
             return PartialView(model);
         }
-        public IActionResult DoEdit(WpAccount edit)
+        public IActionResult DoEdit(SiteAccount edit)
         {
             var rv = new ReturnValue<string>();
-            var model = Db.Queryable<WpAccount>().Where(t => t.Id == edit.Id).First();
+            var model = Db.Queryable<SiteAccount>().Where(t => t.Id == edit.Id).First();
 
             edit.UpdateTime = DateTime.Now;
-            var num = Db.Updateable<WpAccount>(edit).ExecuteCommand();
+            var num = Db.Updateable<SiteAccount>(edit).ExecuteCommand();
             if (num == 1)
             {
                 rv.True("修改成功");
@@ -82,13 +82,13 @@ namespace AIText.Controllers
         public IActionResult DoDelete(string Id)
         {
             var rv = new ReturnValue<string>();
-            Db.Deleteable<WpAccount>().Where(it => it.Id == Id).ExecuteCommand();
+            Db.Deleteable<SiteAccount>().Where(it => it.Id == Id).ExecuteCommand();
             rv.True("删除完成");
             return Json(rv);
         }
-        private ISugarQueryable<WpAccount> SearchSql(WpAccountSearch search)
+        private ISugarQueryable<SiteAccount> SearchSql(SiteAccountSearch search)
         {
-            var query = Db.Queryable<WpAccount>();
+            var query = Db.Queryable<SiteAccount>();
             if (!string.IsNullOrEmpty(search.Site))
             {
                 query.Where(t => t.Site.Contains(search.Site));

@@ -1,4 +1,4 @@
-﻿@model commons.util.PageList<AIText.Models.WpAccount.WpAccountDto>
+﻿@model commons.util.PageList<AIText.Models.SiteAccount.SiteAccountDto>
 @if (Model.List?.Count > 0)
 {
     <div class="card-header">
@@ -31,10 +31,10 @@
                         </td>
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">
-                                <a data-src="@Url.Content("~/WpAccount/Edit?Id="+info.Id)" class="btn btn-white">
+                                <a data-src="@Url.Content("~/SiteAccount/Edit?Id="+info.Id)" class="btn btn-white">
                                     查看
                                 </a>
-                                <a data-confirm="/WpAccount/DoDelete?Id=@info.Id" title="是否删除" class="btn btn-white">
+                                <a data-confirm="/SiteAccount/DoDelete?Id=@info.Id" title="是否删除" class="btn btn-white">
                                     删除
                                 </a>
                             </div>

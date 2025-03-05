@@ -6,14 +6,15 @@ using System.Text;
 
 namespace commons.import
 {
-    public class ImportWpAccount
+    public class ImportSiteAccount
     {
         
     }
-    public class ImportWpAccountDto
+    public class ImportSiteAccountDto
     {
         public string 主键 { get; set; }
         public string 站点 { get; set; }
+        public string 站点类型 { get; set; }
         public string 用户名 { get; set; }
         public string 密码 { get; set; }
 

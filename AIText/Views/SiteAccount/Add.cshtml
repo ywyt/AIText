@@ -1,9 +1,9 @@
-﻿@model AIText.WpAccount
+﻿@model AIText.SiteAccount
 @{
 
 }
 <div class="modal-content">
-    <form class="form-horizontal" data-ajax="true" data-ajax-complete="ajaxRvCompleted" asp-action="DoAdd" asp-controller="WpAccount" data-ajax-method="post">
+    <form class="form-horizontal" data-ajax="true" data-ajax-complete="ajaxRvCompleted" asp-action="DoAdd" asp-controller="SiteAccount" data-ajax-method="post">
 
         <div class="modal-body">
 
@@ -14,8 +14,29 @@
                     <input asp-for="Site" class="bg-focus form-control parsley-validated" />
                     <span asp-validation-for="Site" class="text-danger"> </span>
                 </div>
+                
+            </div>
+
+            <div class="row mb-3 align-items-end">
+
                 <div class="col">
-                    <label class="form-label">名称</label>
+                    <label class="form-label">网站类型</label>
+                    <select asp-for="SiteType" class="form-control">
+                        <option value=""></option>
+                        @foreach (SiteType item in Enum.GetValues(typeof(SiteType)))
+                        {
+                            <option value="@item.GetHashCode()">@item.ExtName()</option>
+                        }
+                    </select>
+                    <span asp-validation-for="SiteType" class="text-danger"> </span>
+                </div>
+
+            </div>
+
+            <div class="row mb-3 align-items-end">
+
+                <div class="col">
+                    <label class="form-label">用户名</label>
                     <input asp-for="Username" class="bg-focus form-control parsley-validated" />
                     <span asp-validation-for="Username" class="text-danger"> </span>
                 </div>

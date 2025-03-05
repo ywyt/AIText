@@ -7,15 +7,15 @@ using System.Text.RegularExpressions;
 
 namespace commons.import
 {
-    public class ExportWpAccount
+    public class ExportSiteAccount
     {
-        public List<ExportWpAccountTemp> SetExport(IList<ExportWpAccountDto> expList)
+        public List<ExportSiteAccountTemp> SetExport(IList<ExportSiteAccountDto> expList)
         {
-            var rvList = new List<ExportWpAccountTemp>();
+            var rvList = new List<ExportSiteAccountTemp>();
             string pattern = @"http[^ ]+\.jpg";
-            foreach (ExportWpAccountDto info in expList)
+            foreach (ExportSiteAccountDto info in expList)
             {
-                var temp = new ExportWpAccountTemp
+                var temp = new ExportSiteAccountTemp
                 {
                     主键 = info.Id,
                     站点 = info.Site,
@@ -33,7 +33,7 @@ namespace commons.import
         }
     }
 
-    public class ExportWpAccountTemp
+    public class ExportSiteAccountTemp
     {
         public string 主键 { get; set; }
         public string 站点 { get; set; }

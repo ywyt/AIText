@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace AIText.Models.WpAccount
+namespace AIText.Models.SiteAccount
 {
-    public class WpAccountDto
+    public class SiteAccountDto
     {
         public System.String Id { get; set; }
         public System.String Site { get; set; }

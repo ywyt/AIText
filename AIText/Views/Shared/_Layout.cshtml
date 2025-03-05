@@ -54,7 +54,7 @@
                 <div class="navbar navbar-light">
                     <div class="container-fluid">
                         <ul class="navbar-nav">
-                            <li class="nav-item   @(Url.ActionContext.HttpContext.Request.Path.Value == "/" ? "active" : "") ">
+                            <li class="nav-item @(Url.ActionContext.HttpContext.Request.Path.Value == "/" ? "active" : "") ">
                                 <a class="nav-link" href="@Url.Content("~/")">
                                     <span class="nav-link-icon d-md-none d-lg-inline-block">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
@@ -64,47 +64,17 @@
                                     </span>
                                 </a>
                             </li>
-                            <li class="nav-item   @(Url.ActionContext.HttpContext.Request.Path.Value == "/AiSetting" ? "active" : "") ">
-                                <a class="nav-link" href="@Url.Content("~/AiSetting")">
+                            <li class="nav-item @(Url.ActionContext.HttpContext.Request.Path.Value == "/SiteAccount" ? "active" : "") ">
+                                <a class="nav-link" href="@Url.Content("~/SiteAccount")">
                                     <span class="nav-link-icon d-md-none d-lg-inline-block">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
                                     </span>
                                     <span class="nav-link-title">
-                                        AiSetting
+                                        站点配置
                                     </span>
                                 </a>
                             </li>
-                            <li class="nav-item   @(Url.ActionContext.HttpContext.Request.Path.Value == "/SendRecord" ? "active" : "") ">
-                                <a class="nav-link" href="@Url.Content("~/SendRecord")">
-                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
-                                    </span>
-                                    <span class="nav-link-title">
-                                        SendRecord
-                                    </span>
-                                </a>
-                            </li>
-                            <li class="nav-item   @(Url.ActionContext.HttpContext.Request.Path.Value == "/WpAccount" ? "active" : "") ">
-                                <a class="nav-link" href="@Url.Content("~/WpAccount")">
-                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
-                                    </span>
-                                    <span class="nav-link-title">
-                                        WpAccount
-                                    </span>
-                                </a>
-                            </li>
-                            <li class="nav-item   @(Url.ActionContext.HttpContext.Request.Path.Value == "/AiAccount" ? "active" : "") ">
-                                <a class="nav-link" href="@Url.Content("~/AiAccount")">
-                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
-                                    </span>
-                                    <span class="nav-link-title">
-                                        AiAccount
-                                    </span>
-                                </a>
-                            </li>
-                            <li class="nav-item   @(Url.ActionContext.HttpContext.Request.Path.Value == "/BusinessKeyword" ? "active" : "") ">
+                            <li class="nav-item @(Url.ActionContext.HttpContext.Request.Path.Value == "/BusinessKeyword" ? "active" : "") ">
                                 <a class="nav-link" href="@Url.Content("~/BusinessKeyword")">
                                     <span class="nav-link-icon d-md-none d-lg-inline-block">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
@@ -114,7 +84,7 @@
                                     </span>
                                 </a>
                             </li>
-                            <li class="nav-item   @(Url.ActionContext.HttpContext.Request.Path.Value == "/SiteKeyword" ? "active" : "") ">
+                            <li class="nav-item @(Url.ActionContext.HttpContext.Request.Path.Value == "/SiteKeyword" ? "active" : "") ">
                                 <a class="nav-link" href="@Url.Content("~/SiteKeyword")">
                                     <span class="nav-link-icon d-md-none d-lg-inline-block">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
@@ -124,7 +94,7 @@
                                     </span>
                                 </a>
                             </li>
-                            <li class="nav-item   @(Url.ActionContext.HttpContext.Request.Path.Value == "/PaintAccount" ? "active" : "") ">
+                            <li class="nav-item @(Url.ActionContext.HttpContext.Request.Path.Value == "/PaintAccount" ? "active" : "") ">
                                 <a class="nav-link" href="@Url.Content("~/PaintAccount")">
                                     <span class="nav-link-icon d-md-none d-lg-inline-block">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
@@ -134,6 +104,27 @@
                                     </span>
                                 </a>
                             </li>
+                            <li class="nav-item @(Url.ActionContext.HttpContext.Request.Path.Value == "/AiSetting" ? "active" : "") ">
+                                <a class="nav-link" href="@Url.Content("~/AiSetting")">
+                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
+                                    </span>
+                                    <span class="nav-link-title">
+                                        发文配置
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item @(Url.ActionContext.HttpContext.Request.Path.Value == "/SendRecord" ? "active" : "") ">
+                                <a class="nav-link" href="@Url.Content("~/SendRecord")">
+                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
+                                    </span>
+                                    <span class="nav-link-title">
+                                        发送记录
+                                    </span>
+                                </a>
+                            </li>
+                            
                         </ul>
                     </div>
                 </div>

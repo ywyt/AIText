@@ -37,7 +37,7 @@ namespace AIText.Controllers
         public IActionResult Add()
         {
             var aiList = Db.Queryable<AiAccount>().ToList();
-            var wpList = Db.Queryable<WpAccount>().ToList();
+            var wpList = Db.Queryable<SiteAccount>().ToList();
             ViewData["aiList"] = aiList;
             ViewData["wpList"] = wpList;
             return PartialView(new AiSetting());
@@ -53,7 +53,7 @@ namespace AIText.Controllers
             }
             if (!string.IsNullOrEmpty(add.WpSiteId))
             {
-                add.WpSite = Db.Queryable<WpAccount>().Where(t => t.Id == add.WpSiteId).First().Site;
+                add.WpSite = Db.Queryable<SiteAccount>().Where(t => t.Id == add.WpSiteId).First().Site;
             }
             add.CreateTime = now;
             add.UpdateTime = now;
@@ -72,7 +72,7 @@ namespace AIText.Controllers
         public IActionResult Edit(string Id)
         {
             var aiList = Db.Queryable<AiAccount>().ToList();
-            var wpList = Db.Queryable<WpAccount>().ToList();
+            var wpList = Db.Queryable<SiteAccount>().ToList();
             ViewData["aiList"] = aiList;
             ViewData["wpList"] = wpList;
             var model = Db.Queryable<AiSetting>().Where(t => t.Id == Id).First();
@@ -90,7 +90,7 @@ namespace AIText.Controllers
             }
             if (!string.IsNullOrEmpty(edit.WpSiteId))
             {
-                edit.WpSite = Db.Queryable<WpAccount>().Where(t => t.Id == edit.WpSiteId).First().Site;
+                edit.WpSite = Db.Queryable<SiteAccount>().Where(t => t.Id == edit.WpSiteId).First().Site;
             }
             edit.StartDate=model.StartDate;
             edit.IsEnable=model.IsEnable;
@@ -169,7 +169,7 @@ namespace AIText.Controllers
                 var record = Db.Queryable<SendRecord>().Where(o => o.IsSync == false).OrderBy(o => o.CreateTime).First();
                 if (record != null)
                 {
-                    WpAccount wp = Db.Queryable<WpAccount>().First(o => o.Id == model.WpSiteId);
+                    SiteAccount wp = Db.Queryable<SiteAccount>().First(o => o.Id == model.WpSiteId);
                     if (wp != null)
                     {
                         if (string.IsNullOrEmpty(wp.AccessKey))
@@ -180,7 +180,7 @@ namespace AIText.Controllers
                                 return Ok("获取WP站点的token出错");
                             }
                             wp.AccessKey = token;
-                            Db.Updateable<WpAccount>().SetColumns(o => o.AccessKey == token).Where(o => o.Id == wp.Id).ExecuteCommand();
+                            Db.Updateable<SiteAccount>().SetColumns(o => o.AccessKey == token).Where(o => o.Id == wp.Id).ExecuteCommand();
                         }
                         var sendRes = await WordpressApi.PostToCreate(wp.Site, wp.AccessKey, record.Title, record.Content);
                         if (sendRes.Contains("|"))
@@ -193,7 +193,7 @@ namespace AIText.Controllers
                                     return Ok("获取WP站点的token出错");
                                 }
                                 wp.AccessKey = token;
-                                Db.Updateable<WpAccount>().SetColumns(o => o.AccessKey == token).Where(o => o.Id == wp.Id).ExecuteCommand();
+                                Db.Updateable<SiteAccount>().SetColumns(o => o.AccessKey == token).Where(o => o.Id == wp.Id).ExecuteCommand();
                                 sendRes = await WordpressApi.PostToCreate(wp.Site, wp.AccessKey, record.Title, record.Content);
                                 if (sendRes.Contains("|"))
                                 {

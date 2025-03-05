@@ -1,4 +1,4 @@
-﻿@model List<commons.import.ImportWpAccountDto>
+﻿@model List<commons.import.ImportSiteAccountDto>
 @{
     
 }
@@ -33,6 +33,11 @@
                         <td class="text-muted">
                             <input type="hidden" name="[@loopi].站点" value="@info.站点" />
                             @info.站点
+                        </td>
+
+                        <td class="text-muted">
+                            <input type="hidden" name="[@loopi].站点类型" value="@info.站点类型" />
+                            @info.站点类型
                         </td>
 
                         <td class="text-muted">

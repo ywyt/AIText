@@ -1,8 +1,8 @@
 ﻿using commons.util;
 
-namespace AIText.Models.WpAccount
+namespace AIText.Models.SiteAccount
 {
-    public class WpAccountSearch
+    public class SiteAccountSearch
     {
         public System.String Site { get; set; }
         public PageModel Pager { get; set; } = new PageModel();
