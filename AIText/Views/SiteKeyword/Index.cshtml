@@ -1,4 +1,7 @@
 ﻿@model AIText.Models.SiteKeyword.SiteKeywordSearch
+@{
+    var sites = ViewData["Site"] as List<AIText.SiteAccount>;
+}
 <div class="page-header d-print-none ">
     <div class="row align-items-center mb-2">
         <div class="col">
@@ -49,8 +52,21 @@
                 <div class="row">
                     <div class="col-2">
                         <div class="subheader mb-2 mt-2">网站</div>
+                        <select name="SiteId" id="SiteId" class="form-control" required>
+                            <option value="">请选择站点</option>
+                            @if (sites?.Count > 0)
+                            {
+                                @foreach (var item in sites)
+                                {
+                                    <option value="@item.Id">@item.Site</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-2">
+                        <div class="subheader mb-2 mt-2">关键词</div>
                         <div>
-                            <input type="text" name="Site" class="form-control" placeholder="" autocomplete="off">
+                            <input type="text" name="Keyword" class="form-control" placeholder="" autocomplete="off">
                         </div>
                     </div>
                     <div class="col-2">

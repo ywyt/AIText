@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.35806.103 d17.14
+VisualStudioVersion = 17.14.35806.103
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIText", "AIText\AIText.csproj", "{2CA22C4A-46D9-446E-A880-35005E764000}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Entitys", "Entitys\Entitys.csproj", "{D7B6D6B7-C885-42A8-ACE7-100DE471845C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{2CA22C4A-46D9-446E-A880-35005E764000}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2CA22C4A-46D9-446E-A880-35005E764000}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CA22C4A-46D9-446E-A880-35005E764000}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7B6D6B7-C885-42A8-ACE7-100DE471845C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7B6D6B7-C885-42A8-ACE7-100DE471845C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7B6D6B7-C885-42A8-ACE7-100DE471845C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7B6D6B7-C885-42A8-ACE7-100DE471845C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

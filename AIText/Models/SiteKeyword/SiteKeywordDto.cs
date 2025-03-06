@@ -13,6 +13,14 @@ namespace AIText.Models.SiteKeyword
         /// </summary>
         public string Keyword { get; set; }
         /// <summary>
+        /// 站点ID
+        /// </summary>
+        public string SiteId { get; set; }
+        /// <summary>
+        /// 域名
+        /// </summary>
+        public string Site { get; set; }
+        /// <summary>
         /// 当前排名
         /// </summary>
         public int Position { get; set; }
@@ -48,6 +56,10 @@ namespace AIText.Models.SiteKeyword
         /// 流量成本
         /// </summary>
         public decimal TrafficCost { get; set; }
+        /// <summary>
+        /// 使用次数
+        /// </summary>
+        public int UseCount { get; set; }
         /// <summary>
         /// 创建时间
         /// </summary>

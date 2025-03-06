@@ -1,6 +1,6 @@
-﻿<script>
-
-</script>
+﻿@{
+    var sites = ViewData["Site"] as List<AIText.SiteAccount>;
+}
 <div class="row row-cards mt-3 card">
     <div class="card-header">
         <h4><i class="card-title"></i> 导入站点关键词</h4>
@@ -13,23 +13,37 @@
 
                 <form id="prepareExcel" class="card" data-ajax="true" data-ajax-complete="previewComplete" data-ajax-update="#divlist" data-ajax-mode="replace" asp-action="ToImport" asp-controller="SiteKeyword" enctype="multipart/form-data" data-ajax-method="post">
                     <div class="row card-body">
-                        <div class="col-12 mb-3">
+                        <div class="col-3">
+                            <select name="selectSiteId" id="selectSiteId" class="form-control" required>
+                                <option value="">请选择站点</option>
+                                @if (sites?.Count > 0)
+                                {
+                                    @foreach (var item in sites)
+                                    {
+                                        <option value="@item.Id">@item.Site</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-9">
 
                             <input type="file" id="excelfile" name="excelfile" multiple class="form-control" required /> <br />
                         </div>
 
-                        <div class=" card-footer text-end" id="previewDiv">
-
+                        <div class="card-footer text-end row" id="previewDiv">
                             <div class="d-flex">
                                 <input value="上传预览" class="btn btn-primary ms-auto" type="submit" id="asubmit" />
                             </div>
                         </div>
+
+
                     </div>
+
                 </form>
                 <form id="importForm" class="card" data-ajax="true" data-ajax-complete="ajaxRvCompletedToSiteKeyword" data-ajax-update="#errMsgDiv" asp-action="DoImport1" asp-controller="SiteKeyword" enctype="multipart/form-data" data-ajax-method="post"
                       style="display:none;">
                     <div class="row card-body">
-                        <div class=" card-footer text-end">
+                        <div class="text-end">
                             <div class="d-flex">
                                 <input value="开始导入" class="btn btn-primary ms-auto" type="submit" id="asubmit" />
                             </div>
@@ -48,6 +62,7 @@
 <script>
     function previewComplete(xhr) {
         if ($(this).html().length > 0) {
+            $("#selectSiteId").prop("disabled", true);
             $("#importForm").show();
             $("#previewDiv").hide();
         }

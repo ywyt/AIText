@@ -18,6 +18,10 @@ namespace commons.import
 
         public string Keyword { get; set; }
 
+        public string SiteId { get; set; }
+
+        public string Site { get; set; }
+
         public int Position { get; set; }
         [Description("Previous position")]
         public int PreviousPosition { get; set; }

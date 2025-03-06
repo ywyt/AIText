@@ -23,6 +23,8 @@ namespace AIText.Controllers
         }
         public IActionResult Index()
         {
+            var siteAccount = Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true).ToList();
+            ViewData["Site"] = siteAccount;
             return View();
         }
         public async Task<IActionResult> DoListAsync(SiteKeywordSearch search)
@@ -97,6 +99,10 @@ namespace AIText.Controllers
         private ISugarQueryable<SiteKeyword> SearchSql(SiteKeywordSearch search)
         {
             var query = Db.Queryable<SiteKeyword>();
+            if (!string.IsNullOrEmpty(search.SiteId))
+            {
+                query.Where(t => t.SiteId  == search.SiteId);
+            }
             if (!string.IsNullOrEmpty(search.Keyword))
             {
                 query.Where(t => t.Keyword.Contains(search.Keyword));
@@ -107,14 +113,24 @@ namespace AIText.Controllers
 
         public IActionResult Import()
         {
+            var siteAccount = Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true).ToList();
+            ViewData["Site"] = siteAccount;
             return View();
         }
 
         [HttpPost]
         // accept request bodies up to 280,000,000 bytes.
         [RequestSizeLimit(280_000_000)]
-        public async Task<IActionResult> ToImportAsync(IFormFile excelfile)
+        public async Task<IActionResult> ToImportAsync(IFormFile excelfile, string selectSiteId)
         {
+            // 必须选中站点
+            if (string.IsNullOrEmpty(selectSiteId))
+                return PartialView(new List<commons.import.ImportSiteKeywordDto>());
+
+            var site = Db.Queryable<SiteAccount>().Where(o => o.Id == selectSiteId).First();
+
+            ViewData["SelectedSite"] = site;
+
             if (excelfile == null)
                 return PartialView(new List<commons.import.ImportSiteKeywordDto>());
             var list = await ExcelHelper<commons.import.ImportSiteKeywordDto>.ImportFromExcel(excelfile);
@@ -164,6 +180,8 @@ namespace AIText.Controllers
                     {
                         Id = Guid.NewGuid().ToString(),
                         Keyword = item.Keyword,
+                        SiteId = item.SiteId,
+                        Site = item.Site,
                         Position = item.Position,
                         PreviousPosition = item.PreviousPosition,
                         SearchVolume = item.SearchVolume,
@@ -187,6 +205,8 @@ namespace AIText.Controllers
                         continue;
                     }
                     model.Keyword = item.Keyword;
+                    model.SiteId = item.SiteId;
+                    model.Site = item.Site;
                     model.Position = item.Position;
                     model.PreviousPosition = item.PreviousPosition;
                     model.SearchVolume = item.SearchVolume;

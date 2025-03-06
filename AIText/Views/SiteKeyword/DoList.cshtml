@@ -8,8 +8,9 @@
         <table class="table table-vcenter card-table">
             <thead>
                 <tr>
-                    <th>ID</th>
+@*                     <th>ID</th> *@
                     <th>关键词</th>
+                    <th>站点</th>
                     <th>当前排名</th>
                     <th>之前排名</th>
                     <th>搜索量</th>
@@ -18,6 +19,7 @@
                     <th>流量</th>
                     <th>流量占比</th>
                     <th>流量成本</th>
+                    <th>使用次数</th>
                     <th class="w-1"></th>
                 </tr>
             </thead>
@@ -25,11 +27,14 @@
                 @foreach (var info in Model.List)
                 {
                     <tr>
-                        <td class="text-muted">
+@*                         <td class="text-muted">
                             @info.Id
-                        </td>
+                        </td> *@
                         <td class="text-muted">
                             @info.Keyword
+                        </td>
+                        <td class="text-muted">
+                            @info.Site
                         </td>
                         <td class="text-muted">
                             @info.Position
@@ -55,12 +60,11 @@
                         <td class="text-muted">
                             @info.TrafficCost
                         </td>
-
+                        <td class="text-muted">
+                            @info.UseCount
+                        </td>
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">
-                                <a data-src="@Url.Content("~/SiteKeyword/Edit?Id="+info.Id)" class="btn btn-white">
-                                    查看
-                                </a>
                                 <a data-confirm="/SiteKeyword/DoDelete?Id=@info.Id" title="是否删除" class="btn btn-white">
                                     删除
                                 </a>

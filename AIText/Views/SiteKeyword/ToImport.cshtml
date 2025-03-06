@@ -1,6 +1,6 @@
 ﻿@model List<commons.import.ImportSiteKeywordDto>
 @{
-    
+    var site = ViewData["SelectedSite"] as AIText.SiteAccount;
 }
 
 @if (Model.Count != 0)
@@ -12,7 +12,6 @@
         <table class="table table-vcenter card-table">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Keyword</th>
                     <th>Position</th>
                     <th>Previous position</th>
@@ -23,8 +22,6 @@
                     <th>Traffic</th>
                     <th>Traffic (%)</th>
                     <th>Traffic Cost</th>
-                    <th>创建时间</th>
-                    <th>更新时间</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,11 +31,13 @@
                 @foreach (var info in Model)
                 {
                     <tr>
-                        <td class="text-muted">
+@*                      <td class="text-muted">
                             <input type="hidden" name="[@loopi].Id" value="@info.Id" />
                             @info.Id
-                        </td>
+                        </td> *@
                         <td class="text-muted">
+                            <input type="hidden" name="[@loopi].SiteId" value="@site.Id" />
+                            <input type="hidden" name="[@loopi].Site" value="@site.Site" />
                             <input type="hidden" name="[@loopi].Keyword" value="@info.Keyword" />
                             @info.Keyword
                         </td>
