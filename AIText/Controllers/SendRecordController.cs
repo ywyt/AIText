@@ -70,7 +70,7 @@ namespace AIText.Controllers
             model.SyncSite = edit.SyncSite;
             model.SyncTime = edit.SyncTime;
             model.UpdateTime = DateTime.Now;
-            var num = Db.Updateable<SendRecord>(edit).ExecuteCommand();
+            var num = Db.Updateable<SendRecord>(model).ExecuteCommand();
             if (num == 1)
             {
                 rv.True("修改成功");
