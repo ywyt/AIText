@@ -82,20 +82,20 @@ namespace AIText.Controllers
         {
             var rv = new ReturnValue<string>();
             var model = Db.Queryable<AiSetting>().Where(t => t.Id == edit.Id).First();
-            edit.Prompt = model.Prompt;
-            edit.CountPerDay=model.CountPerDay;
+            model.Prompt = edit.Prompt;
+            model.CountPerDay= edit.CountPerDay;
             if (!string.IsNullOrEmpty(edit.AiSiteId))
             {
-                edit.AiSite = Db.Queryable<AiAccount>().Where(t => t.Id == edit.AiSiteId).First().Site;
+                model.AiSite = Db.Queryable<AiAccount>().Where(t => t.Id == edit.AiSiteId).First().Site;
             }
             if (!string.IsNullOrEmpty(edit.WpSiteId))
             {
-                edit.WpSite = Db.Queryable<SiteAccount>().Where(t => t.Id == edit.WpSiteId).First().Site;
+                model.WpSite = Db.Queryable<SiteAccount>().Where(t => t.Id == edit.WpSiteId).First().Site;
             }
-            edit.StartDate=model.StartDate;
-            edit.IsEnable=model.IsEnable;
-            edit.UpdateTime=DateTime.Now;
-            var num = Db.Updateable<AiSetting>(edit).ExecuteCommand();
+            model.StartDate= edit.StartDate;
+            model.IsEnable= edit.IsEnable;
+            model.UpdateTime=DateTime.Now;
+            var num = Db.Updateable<AiSetting>(model).ExecuteCommand();
             if (num == 1)
             {
                 rv.True("修改成功");
