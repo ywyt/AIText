@@ -19,6 +19,8 @@ namespace AIText
         public System.String Password { get; set; }
         public System.String AccessKey { get; set; }
         public bool IsEnable { get; set; }
+        public int CountPerDay { get; set; }
+        public DateTime? StartDate { get; set; }
         public DateTime? CreateTime { get; set; }
         public DateTime? UpdateTime { get; set; }
     }

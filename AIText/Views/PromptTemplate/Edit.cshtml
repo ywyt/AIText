@@ -1,0 +1,50 @@
+﻿@model AIText.PromptTemplate
+@{
+
+}
+<div class="modal-content">
+    <div class="modal-header">
+        <h3>提示：指令必须包含关键词占位符 {keyword}</h3>
+
+    </div>
+    <form class="form-horizontal" data-ajax="true" data-ajax-complete="ajaxRvCompleted" asp-action="DoEdit" asp-controller="PromptTemplate" data-ajax-method="post">
+        @Html.HiddenFor(obj => obj.Id)
+        <div class="modal-body">
+
+            <div class="row mb-3 align-items-end">
+
+                <div class="col">
+                    <label class="form-label">名称</label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"> </span>
+                </div>
+
+            </div>
+
+            <div class="row mb-3 align-items-end">
+
+                <div class="col">
+                    <label class="form-label">提示词</label>
+                    <textarea asp-for="Prompt" class="bg-focus form-control parsley-validated" rows="10"></textarea>
+                    <span asp-validation-for="Prompt" class="text-danger"> </span>
+                </div>
+
+            </div>
+
+            <div class="row mb-3 align-items-end">
+                <div class="col">
+                    <label class="form-check">
+                        <input class="form-check-input" type="checkbox" asp-for="IsEnable">
+                        <span class="form-check-label">是否启用</span>
+                    </label>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">修改</button>
+        </div>
+    </form>
+
+</div>
+

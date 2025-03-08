@@ -1,27 +1,34 @@
-﻿@model AIText.AiAccount
+﻿@model AIText.PromptTemplate
 @{
 
 }
 <div class="modal-content">
-    <form class="form-horizontal" data-ajax="true" data-ajax-complete="ajaxRvCompleted" asp-action="DoAdd" asp-controller="AiAccount" data-ajax-method="post">
+    <div class="modal-header">
+        <h3>提示：指令必须包含关键词占位符 {keyword}</h3>
+
+    </div>
+    <form class="form-horizontal" data-ajax="true" data-ajax-complete="ajaxRvCompleted" asp-action="DoAdd" asp-controller="PromptTemplate" data-ajax-method="post">
 
         <div class="modal-body">
 
             <div class="row mb-3 align-items-end">
 
                 <div class="col">
-                    <label class="form-label">网站</label>
-                    <input asp-for="Site" class="bg-focus form-control parsley-validated" />
-                    <span asp-validation-for="Site" class="text-danger"> </span>
+                    <label class="form-label">名称</label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"> </span>
+                </div>
+
+            </div>
+
+            <div class="row mb-3 align-items-end">
+
+                <div class="col">
+                    <label class="form-label">提示词</label>
+                    <textarea asp-for="Prompt" class="bg-focus form-control parsley-validated" rows="10"></textarea>
+                    <span asp-validation-for="Prompt" class="text-danger"> </span>
                 </div>
                 
-            </div>
-            <div class="row mb-3 align-items-end">
-                <div class="col">
-                    <label class="form-label">ApiKey</label>
-                    <input asp-for="ApiKey" class="bg-focus form-control parsley-validated" />
-                    <span asp-validation-for="ApiKey" class="text-danger"> </span>
-                </div>
             </div>
 
             <div class="row mb-3 align-items-end">

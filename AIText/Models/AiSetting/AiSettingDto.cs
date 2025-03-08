@@ -5,9 +5,6 @@ namespace AIText.Models.AiSetting
     public class AiSettingDto
     {
         public string Id { get; set; }
-
-        public string Prompt { get; set; }
-
         /// <summary>
         /// 每天创建的文章数
         /// </summary>
@@ -19,11 +16,11 @@ namespace AIText.Models.AiSetting
         /// </summary>
         public string AiSite { get; set; }
 
-        public string WpSiteId { get; set; }
+        public string SiteId { get; set; }
         /// <summary>
-        /// 需要推送到的Wordpress站点
+        /// 需要推送到的站点
         /// </summary>
-        public string WpSite { get; set; }
+        public string Site { get; set; }
 
         public bool IsEnable { get; set; }
 

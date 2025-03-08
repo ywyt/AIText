@@ -5,10 +5,7 @@ namespace AIText.Models.AiSetting
 {
     public class AiSettingSearch
     {
-
-        public string Prompt { get; set; }
-        public string AiSite { get; set; }
-        public string WpSite { get; set; }
+        public string Site { get; set; }
         public bool? IsEnable { get; set; }
         /// <summary>
         /// 

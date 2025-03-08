@@ -93,7 +93,10 @@ namespace AIText.Controllers
             {
                 query.Where(t => t.Site.Contains(search.Site));
             }
-
+            if (search.SiteType.HasValue)
+            {
+                query.Where(t => t.SiteType == search.SiteType);
+            }
             return query;
         }
     }

@@ -8,9 +8,12 @@
         <table class="table table-vcenter card-table">
             <thead>
                 <tr>
-                    <th>提示词</th>
+                    <th>指令模板</th>
+                    <th>关键词</th>
                     <th>标题</th>
-                    <th>内容</th>
+                    <th>图片</th>
+                    <th>图片生成时间</th>
+                    <th>文章生成时间</th>
                     <th>同步站点</th>
                     <th>是否同步</th>
 
@@ -22,23 +25,60 @@
                 {
                     <tr>
                         <td class="text-muted">
-                            @info.Prompt
+                            @info.TemplateName
+                        </td>
+                        <td class="text-muted">
+                            @info.Keyword
                         </td>
                         <td class="text-muted">
                             @info.Title
                         </td>
                         <td class="text-muted">
-                            @info.Content
+                            @if (!string.IsNullOrEmpty(info.ImgUrl) || !string.IsNullOrEmpty(info.ImgPath))
+                            {
+                                <img src="@(info.ImgPath ?? info.ImgUrl)" height="100" />
+                            }
+                        </td>
+                        <td class="text-muted">
+                            @info.ImgTime
+                        </td>
+                        <td class="text-muted">
+                            @info.AiTime
                         </td>
                         <td class="text-muted">
                             @info.SyncSite
                         </td>
                         <td class="text-muted">
-                            @(info.IsSync==true?"是":"否")
+                            @(info.IsSync == true ? "是" : "否")
                         </td>
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">
-                                <a data-src="@Url.Content("~/SendRecord/Edit?Id="+info.Id)" class="btn btn-white">
+                                <!--没有图片且未生成文章时，可调用绘图-->
+                                @if (string.IsNullOrEmpty(info.ImgUrl) && string.IsNullOrEmpty(info.Content))
+                                {
+                                    <a data-src="@Url.Action("~/SendRecord/DoDraw?Id=" + info.Id)" class="btn bg-yellow">
+                                        绘图
+                                    </a>
+                                }
+                                @if (string.IsNullOrEmpty(info.Content))
+                                {
+                                    <a data-src="@Url.Action("~/SendRecord/DoAI?Id=" + info.Id)" class="btn btn-azure">
+                                        生成文章
+                                    </a>
+                                }
+                                else 
+                                {
+                                    if (info.IsSync == false)
+                                    {
+                                        <a data-src="@Url.Action("~/SendRecord/DoSync?Id=" + info.Id)" class="btn btn-green">
+                                            同步
+                                        </a>
+                                    }
+                                    <a href="@Url.Content("~/SendRecord/Preview?Id=" + info.Id)" class="btn btn-facebook" target="_blank">
+                                        预览
+                                    </a>
+                                }
+                                <a href="@Url.Content("~/SendRecord/Edit?Id=" + info.Id)" class="btn btn-white">
                                     查看
                                 </a>
                                 <a data-confirm="/SendRecord/DoDelete?Id=@info.Id" title="是否删除" class="btn btn-white">

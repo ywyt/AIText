@@ -1,0 +1,47 @@
+﻿@model AIText.SendRecord
+@{
+    if (string.IsNullOrEmpty(Model?.Content))
+    {
+        <h1>没有生成文章</h1>
+        return;
+    }
+    else
+    {
+        <h1>@Model.Title</h1>   
+    }
+}
+<div class="modal-content">
+    <div class="card">
+        <div class="card-body">
+            <iframe id="myIframe" style="width: 100%; height: 700px; border: 1px solid #ccc;"></iframe>
+        </div>
+    </div>
+</div>
+<script>
+
+    // 要加载到 iframe 的 HTML 内容
+    var encodedHtmlContent = `@Model.Content`;
+
+    // 创建一个元素用于解码 HTML 实体
+    var decodeHtml = (html) => {
+        const txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+    };
+
+    // 解码 HTML 内容
+    var htmlContent = decodeHtml(encodedHtmlContent);
+
+    // 创建一个 Blob 对象
+    var blob = new Blob([htmlContent], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+
+    // 获取 iframe 并设置 src 属性
+    var iframe = document.getElementById('myIframe');
+    iframe.src = url;
+
+    // 释放 Blob URL
+    iframe.onload = () => {
+        URL.revokeObjectURL(url);
+    };
+</script>

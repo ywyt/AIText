@@ -1,6 +1,6 @@
 ﻿@model AIText.SendRecord
 @{
-
+    var settings = ViewData["Sites"] as List<AIText.SiteAccount>;
 }
 <div class="modal-content">
     <form class="form-horizontal" data-ajax="true" data-ajax-complete="ajaxRvCompleted" asp-action="DoAdd" asp-controller="SendRecord" data-ajax-method="post">
@@ -9,42 +9,22 @@
 
             <div class="row mb-3 align-items-end">
 
-                <div class="col">
-                    <label class="form-label">提示词</label>
-                    <input asp-for="Prompt" class="bg-focus form-control parsley-validated" />
-                    <span asp-validation-for="Prompt" class="text-danger"> </span>
-                </div>
-                <div class="col">
-                    <label class="form-label">标题</label>
-                    <input asp-for="Title" type="text" class="bg-focus form-control parsley-validated" />
-                    <span asp-validation-for="Title" class="text-danger"> </span>
-                </div>
-            </div>
-
-            <div class="row mb-3 align-items-end">
-
-                <div class="col">
-                    <label class="form-label">内容</label>
-                    <input asp-for="Content"  class="bg-focus form-control parsley-validated" />
-                    <span asp-validation-for="Content" class="text-danger"> </span>
+                <div class="col-12 mb-3">
+                    <label class="form-label">发文站点</label>
+                    <select asp-for="Id" class="form-control">
+                        <option value=""></option>
+                        @if (settings?.Count > 0)
+                        {
+                            @foreach (var item in settings)
+                            {
+                                <option value="@item.Id">@item.Site</option>
+                            }
+                        }
+                    </select>
+                    <span asp-validation-for="Id" class="text-danger"> </span>
                 </div>
             </div>
 
-            <div class="row mb-3 align-items-end">
-                <div class="col">
-                    <label class="form-label">同步时间</label>
-                    <input class="form-control" asp-for="SyncTime">
-
-                </div>
-            </div>
-            <div class="row mb-3 align-items-end">
-                <div class="col">
-                    <label class="form-check">
-                        <input class="form-check-input" type="checkbox" asp-for="IsSync">
-                        <span class="form-check-label">是否同步</span>
-                    </label>
-                </div>
-            </div>
 
         </div>
         <div class="modal-footer">
