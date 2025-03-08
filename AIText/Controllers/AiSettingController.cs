@@ -86,10 +86,12 @@ namespace AIText.Controllers
             model.CountPerDay= edit.CountPerDay;
             if (!string.IsNullOrEmpty(edit.AiSiteId))
             {
+                model.AiSiteId = edit.AiSiteId;
                 model.AiSite = Db.Queryable<AiAccount>().Where(t => t.Id == edit.AiSiteId).First().Site;
             }
             if (!string.IsNullOrEmpty(edit.WpSiteId))
             {
+                model.WpSiteId = edit.WpSiteId;
                 model.WpSite = Db.Queryable<SiteAccount>().Where(t => t.Id == edit.WpSiteId).First().Site;
             }
             model.StartDate= edit.StartDate;
