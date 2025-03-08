@@ -63,13 +63,13 @@ namespace AIText.Controllers
         {
             var rv = new ReturnValue<string>();
             var model = Db.Queryable<SendRecord>().Where(t => t.Id == edit.Id).First();
-            edit.Prompt = model.Prompt;
-            edit.Title = model.Title;
-            edit.Content = model.Content;
-            edit.IsSync = model.IsSync;
-            edit.SyncSite = model.SyncSite;
-            edit.SyncTime = model.SyncTime;
-            edit.UpdateTime = DateTime.Now;
+            model.Prompt = edit.Prompt;
+            model.Title = edit.Title;
+            model.Content = edit.Content;
+            model.IsSync = edit.IsSync;
+            model.SyncSite = edit.SyncSite;
+            model.SyncTime = edit.SyncTime;
+            model.UpdateTime = DateTime.Now;
             var num = Db.Updateable<SendRecord>(edit).ExecuteCommand();
             if (num == 1)
             {
