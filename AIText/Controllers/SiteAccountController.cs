@@ -65,9 +65,14 @@ namespace AIText.Controllers
         {
             var rv = new ReturnValue<string>();
             var model = Db.Queryable<SiteAccount>().Where(t => t.Id == edit.Id).First();
-
-            edit.UpdateTime = DateTime.Now;
-            var num = Db.Updateable<SiteAccount>(edit).ExecuteCommand();
+            model.Site = edit.Site;
+            model.Username = edit.Username;
+            model.Password = edit.Password;
+            model.CountPerDay = edit.CountPerDay;
+            model.IsEnable = edit.IsEnable;
+            model.StartDate = edit.StartDate;
+            model.UpdateTime = DateTime.Now;
+            var num = Db.Updateable<SiteAccount>(model).ExecuteCommand();
             if (num == 1)
             {
                 rv.True("修改成功");

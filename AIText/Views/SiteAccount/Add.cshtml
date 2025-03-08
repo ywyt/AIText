@@ -14,7 +14,7 @@
                     <input asp-for="Site" class="bg-focus form-control parsley-validated" />
                     <span asp-validation-for="Site" class="text-danger"> </span>
                 </div>
-                
+
             </div>
 
             <div class="row mb-3 align-items-end">
@@ -61,11 +61,20 @@
             </div>
 
             <div class="row mb-3 align-items-end">
-                <div class="col">
+                <div class="col-6 mb-3">
                     <label class="form-check">
                         <input class="form-check-input" type="checkbox" asp-for="IsEnable">
                         <span class="form-check-label">是否启用</span>
                     </label>
+                </div>
+                <div class="col-6 mb-3 enable-send invisible">
+                    <label class="form-label">每天创建的文章数</label>
+                    <input asp-for="CountPerDay" type="number" class="bg-focus form-control parsley-validated" />
+                    <span asp-validation-for="CountPerDay" class="text-danger"> </span>
+                </div>
+                <div class="col-12 enable-send d-none">
+                    <label class="form-label">开始时间</label>
+                    <input class="form-control" asp-for="StartDate">
                 </div>
             </div>
 
@@ -76,4 +85,23 @@
     </form>
 
 </div>
-
+<script>
+    $(function() {
+        $("#IsEnable").change(function() {
+            if ($(this).is(":checked")) {
+                $(".enable-send").show();
+                $(".enable-send").removeClass("invisible");
+                $(".enable-send").removeClass("d-none");
+            } else {
+                $(".enable-send").each(function(idx, item){
+                    if ($(item).hasClass("col-6")) {
+                        $(item).addClass("invisible");
+                    } else {
+                        $(item).addClass("d-none");
+                    }
+                })
+            }
+        });
+        $("#IsEnable").trigger("change");
+    });
+</script>
