@@ -5,8 +5,6 @@ namespace AIText.Models.SendRecord
     public class SendRecordDto
     {
         public string Id { get; set; }
-
-        public string SettingId { get; set; }
         public string AiSiteId { get; set; }
         public string AiSite { get; set; }
         public string Link { get; set; }
@@ -26,6 +24,7 @@ namespace AIText.Models.SendRecord
         public string SyncSiteId { get; set; }
 
         public string SyncSite { get; set; }
+        public string SyncUrl { get; set; }
 
         public DateTime? SyncTime { get; set; }
 

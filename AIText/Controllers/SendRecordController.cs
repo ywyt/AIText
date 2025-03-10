@@ -1,7 +1,9 @@
 ﻿using AIText.Models.SendRecord;
+using Azure;
 using Dm;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using NPOI.HSSF.Record.Chart;
 using NPOI.XWPF.UserModel;
 using SqlSugar;
 using System;
@@ -59,19 +61,23 @@ namespace AIText.Controllers
                 // 没使用过的，最少使用量的关键词
                 var siteKeyword = Db.Queryable<SiteKeyword>().Where(o => o.SiteId == setting.Id).OrderBy(o => o.UseCount).First();
 
+                if (siteKeyword == null)
+                {
+                    rv.False("没有设置站点关键词");
+                    return Json(rv);
+                }
+
                 // 抽取指令
                 var promptTempList = Db.Queryable<PromptTemplate>().ToList();
                 var promptTemp = promptTempList[RecordRandom.Next(0, promptTempList.Count - 1)];
                 
                 SendRecord sendRecord = new SendRecord
                 {
-                    SettingId = Id,
-                    //AiSiteId = setting.AiSiteId,
-                    //AiSite = setting.AiSite,
                     Link = siteKeyword.URL,
                     KeywordId = siteKeyword.Id,
                     Keyword = siteKeyword.Keyword,
                     TemplateId = promptTemp.Id,
+                    TemplateName = promptTemp.Name,
                     IsSync = false,
                     SyncSiteId  = setting.Id,
                     SyncSite = setting.Site,
@@ -113,18 +119,40 @@ namespace AIText.Controllers
             }
             else
             {
-                imgUrl = await Liblibai.status(paintAccount.AccessKey, paintAccount.SecretKey, imgResult);
-                imgTime = DateTime.Now;
-                // TODO: 将图片下载保存本地，后续替换content中的imgUrl
-                //ImgPath = "", 
+                rv.status = await GetImgResutl(paintAccount, imgResult, Id);
+                return Json(rv);
+            }
+        }
 
+        private async Task<bool> GetImgResutl(PaintAccount paintAccount, string uuid, int id, int retry = 0)
+        {
+            var imgUrlResult = await Liblibai.status(paintAccount.AccessKey, paintAccount.SecretKey, uuid);
+            if (imgUrlResult.Contains("|"))
+            {
+                if (retry < 3)
+                {
+                    await Task.Delay(3000 * (retry + 1));
+                    return await GetImgResutl(paintAccount, uuid, id, ++retry);
+                }
+                else
+                {
+                    var msg = imgUrlResult.Substring(imgUrlResult.IndexOf("|"));
+                    // 更新错误信息
+                    var ret = Db.Updateable<SendRecord>()
+                                .SetColumns(o => o.ImgErrMsg == msg)
+                                .SetColumns(o => o.ImgTime == DateTime.Now)
+                                .Where(o => o.Id == id).ExecuteCommand();
+                    return false;
+                }
+            }
+            else
+            {
                 // 更新图片地址
                 var ret = Db.Updateable<SendRecord>()
-                            .SetColumns(o => o.ImgUrl == imgUrl)
-                            .SetColumns(o => o.ImgTime == imgTime)
-                            .Where(o => o.Id == Id).ExecuteCommand();
-                rv.status = ret > 0;
-                return Json(rv);
+                            .SetColumns(o => o.ImgUrl == imgUrlResult)
+                            .SetColumns(o => o.ImgTime == DateTime.Now)
+                            .Where(o => o.Id == id).ExecuteCommand();
+                return ret > 0;
             }
         }
 
@@ -270,11 +298,7 @@ namespace AIText.Controllers
                             }
                             else
                             {
-                                var ret = Db.Updateable<SendRecord>()
-                                    .SetColumns(o => new SendRecord { IsSync = true, SyncTime = DateTime.Now })
-                                    .Where(o => o.Id == sendRecord.Id)
-                                    .ExecuteCommand();
-                                rv.status = ret > 0;
+                                rv.status = UpdateSyncResult(sendRes, sendRecord.Id);
                                 return Json(rv);
                             }
                         }
@@ -288,11 +312,7 @@ namespace AIText.Controllers
                     }
                     else
                     {
-                        var ret = Db.Updateable<SendRecord>()
-                                    .SetColumns(o => new SendRecord { IsSync = true, SyncTime = DateTime.Now })
-                                    .Where(o => o.Id == sendRecord.Id)
-                                    .ExecuteCommand();
-                        rv.status = ret > 0;
+                        rv.status = UpdateSyncResult(sendRes, sendRecord.Id);
                         return Json(rv);
                     }
                 }
@@ -309,6 +329,29 @@ namespace AIText.Controllers
             }
         }
 
+        private bool UpdateSyncResult(string sendRes, int Id)
+        {
+            var syncUrl = string.Empty;
+            if (!string.IsNullOrWhiteSpace(sendRes) && (sendRes.StartsWith("{") || sendRes.StartsWith("[")))
+            {
+                try
+                {
+                    var jsonResult = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(sendRes);
+                    syncUrl = jsonResult["link"];
+                }
+                catch (Exception ex)
+                {
+                    //
+                }
+            }
+            var ret = Db.Updateable<SendRecord>()
+                        .SetColumns(o => new SendRecord { IsSync = true, SyncUrl = syncUrl, SyncTime = DateTime.Now })
+                        .Where(o => o.Id == Id)
+                        .ExecuteCommand();
+            return ret > 0;
+
+        }
+
         public IActionResult Preview(int Id)
         {
             var model = Db.Queryable<SendRecord>().Where(t => t.Id == Id).First();
@@ -319,7 +362,7 @@ namespace AIText.Controllers
         public IActionResult Edit(int Id)
         {
             var model = Db.Queryable<SendRecord>().Where(t => t.Id == Id).First();
-            return PartialView(model);
+            return View(model);
         }
         public IActionResult DoEdit(SendRecord edit)
         {

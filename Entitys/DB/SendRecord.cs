@@ -16,7 +16,6 @@ namespace AIText
         [SugarColumn(IsPrimaryKey = true)]
         public int Id { get; set; }
 
-        public string SettingId { get; set; }
         public string AiSiteId { get; set; }
         public string AiSite { get; set; }
         public string Link { get; set; }
@@ -39,6 +38,8 @@ namespace AIText
         public string SyncSiteId { get; set; }
 
         public string SyncSite { get; set; }
+
+        public string SyncUrl { get; set; }
 
         public DateTime? SyncTime { get; set; }
 

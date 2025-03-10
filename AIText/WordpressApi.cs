@@ -1,6 +1,7 @@
 ﻿using RestSharp;
 using SqlSugar.Extensions;
 using System;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 
 namespace AIText
@@ -11,20 +12,26 @@ namespace AIText
         {
             var options = new RestClientOptions(site);
             var client = new RestClient(options);
-            var request = new RestRequest("/wp-json/api/v1/token", Method.Post);
-            request.AlwaysMultipartFormData = true;
+            var request = new RestRequest("/index.php/wp-json/api/v1/token", Method.Post);
             request.AddParameter("username", user);
             request.AddParameter("password", pwd);
             RestResponse response = await client.ExecuteAsync(request);
             if (response.IsSuccessStatusCode)
             {
-                // 解析JSON响应
-                var jsonResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(response.Content);
-                // 提取jwt_token字段
-                string token = jsonResponse["jwt_token"];
-                //// 提取expires_in字段
-                //string expire = jsonResponse["expires_in"];
-                return token;
+                if (!string.IsNullOrWhiteSpace(response.Content) && (response.Content.StartsWith("{") || response.Content.StartsWith("[")))
+                {
+                    // 解析JSON响应
+                    var jsonResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(response.Content);
+                    // 提取jwt_token字段
+                    string token = jsonResponse["jwt_token"];
+                    //// 提取expires_in字段
+                    //string expire = jsonResponse["expires_in"];
+                    return token;
+                }
+                else
+                {
+                    return response.StatusCode + "|" + response.Content;
+                }
             }
             else
             {
