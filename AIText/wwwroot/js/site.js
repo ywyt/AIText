@@ -324,12 +324,12 @@ function dataSrc() {
             sb += '    <div class="modal-footer">';
             sb += '        <div class="w-100">';
             sb += '            <div class="row">';
-            sb += '                <div class="col"><a href="#" class="btn btn-white w-100" data-dismiss="modal">';
+            sb += '                <div class="col"><button href="#" class="btn btn-white w-100" data-dismiss="modal">';
             sb += '                    取消';
-            sb += '                  </a></div>';
-            sb += '                <div class="col"><a href="#" data-action-confirm="' + col.attr("data-confirm")+'" class="btn btn-danger w-100" data-bs-dismiss="modal">';
+            sb += '                  </button></div>';
+            sb += '                <div class="col"><button href="#" data-action-confirm="' + col.attr("data-confirm")+'" class="btn btn-danger w-100" data-bs-dismiss="modal">';
             sb += '                    确定';
-            sb += '                  </a></div>';
+            sb += '                  </button></div>';
             sb += '            </div>';
             sb += '        </div>';
             sb += '    </div>';
@@ -351,6 +351,8 @@ function dataconfirm() {
     $("[data-action-confirm]").each(function (p, obj) {
         $(obj).unbind("click");
         $(obj).click(function () {
+            $("#modal").find("button").prop("disabled", true);
+            $(this).text("处理中");
             $.AjaxServer($(this).attr("data-action-confirm"), {}, function (data) {
                
                 if (data) {

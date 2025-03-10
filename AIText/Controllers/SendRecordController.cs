@@ -1,14 +1,22 @@
 ﻿using AIText.Models.SendRecord;
 using Azure;
 using Dm;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using NPOI.HSSF.Record.Chart;
+using NPOI.SS.UserModel;
 using NPOI.XWPF.UserModel;
+using Org.BouncyCastle.Crypto;
 using SqlSugar;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AIText.Controllers
@@ -17,9 +25,11 @@ namespace AIText.Controllers
     {
         static Random RecordRandom = new Random();
         private readonly SqlSugarClient Db;
-        public SendRecordController(SqlSugarClient _Db)
+        private readonly IWebHostEnvironment _env;
+        public SendRecordController(SqlSugarClient _Db, IWebHostEnvironment env)
         {
             Db = _Db;
+            _env = env;
         }
         public IActionResult Index()
         {
@@ -70,10 +80,16 @@ namespace AIText.Controllers
                 // 抽取指令
                 var promptTempList = Db.Queryable<PromptTemplate>().ToList();
                 var promptTemp = promptTempList[RecordRandom.Next(0, promptTempList.Count - 1)];
-                
+
+                var urlList = Db.Queryable<SiteKeyword>().Where(o => o.SiteId == setting.Id)
+                    .Select(o => o.URL)
+                    .OrderBy(o => SqlFunc.GetRandom()).Take(3).ToList();
+
+                var urlString = string.Join(",", urlList);
+
                 SendRecord sendRecord = new SendRecord
                 {
-                    Link = siteKeyword.URL,
+                    Link = urlString,
                     KeywordId = siteKeyword.Id,
                     Keyword = siteKeyword.Keyword,
                     TemplateId = promptTemp.Id,
@@ -87,6 +103,10 @@ namespace AIText.Controllers
                 };
                 var ret = Db.Insertable(sendRecord).ExecuteCommand();
                 rv.status = ret > 0;
+                if (rv.status)
+                {
+                    Db.Updateable<SiteKeyword>().SetColumns(o => o.UseCount == (o.UseCount +1)).Where(o => o.Id == siteKeyword.Id).ExecuteCommand();
+                }
             }
             return Json(rv);
         }
@@ -119,12 +139,12 @@ namespace AIText.Controllers
             }
             else
             {
-                rv.status = await GetImgResutl(paintAccount, imgResult, Id);
+                rv.status = await GetImgResult(paintAccount, imgResult, Id);
                 return Json(rv);
             }
         }
 
-        private async Task<bool> GetImgResutl(PaintAccount paintAccount, string uuid, int id, int retry = 0)
+        private async Task<bool> GetImgResult(PaintAccount paintAccount, string uuid, int id, int retry = 0)
         {
             var imgUrlResult = await Liblibai.status(paintAccount.AccessKey, paintAccount.SecretKey, uuid);
             if (imgUrlResult.Contains("|"))
@@ -132,7 +152,7 @@ namespace AIText.Controllers
                 if (retry < 3)
                 {
                     await Task.Delay(3000 * (retry + 1));
-                    return await GetImgResutl(paintAccount, uuid, id, ++retry);
+                    return await GetImgResult(paintAccount, uuid, id, ++retry);
                 }
                 else
                 {
@@ -147,12 +167,91 @@ namespace AIText.Controllers
             }
             else
             {
+                string imgPaths = null;
+                //var imgs = imgUrlResult.Split(",", StringSplitOptions.RemoveEmptyEntries);
+                //List<string> downImgs = new List<string>();
+                //foreach (var url in imgs)
+                //{
+                //    var path = DownloadImg(url);
+                //    if (!string.IsNullOrEmpty(path))
+                //        downImgs.Add(path);
+                //}
+                //imgPaths = string.Join(",", downImgs);
                 // 更新图片地址
                 var ret = Db.Updateable<SendRecord>()
                             .SetColumns(o => o.ImgUrl == imgUrlResult)
+                            .SetColumns(o => o.ImgPath == imgPaths)
                             .SetColumns(o => o.ImgTime == DateTime.Now)
                             .Where(o => o.Id == id).ExecuteCommand();
                 return ret > 0;
+            }
+        }
+
+        public IActionResult DoDown(int Id)
+        {
+            ReturnValue<string> rv = new ReturnValue<string>();
+            var sendRecord = Db.Queryable<SendRecord>().Where(o => o.Id == Id).First();
+            var imgs = sendRecord.ImgUrl.Split(",", StringSplitOptions.RemoveEmptyEntries);
+            List<string> downImgs = new List<string>();
+            foreach (var url in imgs)
+            {
+                Thread.Sleep(5000);
+                var path = DownloadImg(url);
+                if (!string.IsNullOrEmpty(path))
+                    downImgs.Add(path);
+            }
+            string imgPaths = string.Join(",", downImgs);
+            // 更新图片地址
+            var ret = Db.Updateable<SendRecord>()
+                        .SetColumns(o => o.ImgPath == imgPaths)
+                        .SetColumns(o => o.ImgTime == DateTime.Now)
+                        .Where(o => o.Id == Id).ExecuteCommand();
+            rv.status = ret > 0;
+            return Json(rv);
+        }
+
+        private string DownloadImg(string url)
+        {
+            // 图片记录地址，是个URL记录，进行图片下载，设置到单元格内后，url文本内容会被图片遮挡住
+            if (!string.IsNullOrEmpty(url))
+            {
+                try
+                {
+                    var path = Path.Combine("Resources", "Images", Path.GetFileName(url));
+                    string savePath = Path.Combine(_env.WebRootPath, path);
+                    if (DownloadFile(url, savePath))
+                        return path;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+            return null;
+        }
+
+        static bool DownloadFile(string fileUrl, string savePath)
+        {
+            using (WebClient client = new WebClient())
+            {
+                try
+                {
+                    // 获取文件所在的目录路径
+                    string? directoryPath = Path.GetDirectoryName(savePath);
+
+                    // 如果目录不存在，则创建
+                    if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
+                    {
+                        Directory.CreateDirectory(directoryPath);
+                    }
+
+                    client.DownloadFile(fileUrl, savePath);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    return false;
+                }
             }
         }
 
@@ -190,10 +289,10 @@ namespace AIText.Controllers
 
             // 组装指令
             var prompt = promptTemp.Prompt.Replace("{keyword}", sendRecord.Keyword);
-            prompt += $" 需要在文章中选择合适的文字插入链接{sendRecord.Link}";
+            prompt += $"\n需要在文章中选择合适的文字插入链接{sendRecord.Link}";
             if (!string.IsNullOrEmpty(sendRecord.ImgUrl))
             {
-                prompt += $" 在文章的段落中插入图片{sendRecord.ImgUrl}";
+                prompt += $"\n在文章的段落中插入图片{sendRecord.ImgUrl}";
             }
 
             var content = await Volcengine.ChatCompletions(aiAccount.ApiKey, prompt);

@@ -11,7 +11,8 @@
                     <th>网站</th>
                     <th>用户名</th>
                     <th>是否启用</th>
-
+                    <th>每日发送</th>
+                    <th>开始发送时间</th>
                     <th class="w-1"></th>
                 </tr>
             </thead>
@@ -25,9 +26,14 @@
                         <td class="text-muted">
                             @info.Username
                         </td>
-
                         <td class="text-muted">
                             @(info.IsEnable == true ? "是" : "否")
+                        </td>
+                        <td class="text-muted">
+                            @info.CountPerDay
+                        </td>
+                        <td class="text-muted">
+                            @info.StartDate
                         </td>
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">

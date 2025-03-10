@@ -36,7 +36,7 @@
                         <td class="text-muted">
                             @if (!string.IsNullOrEmpty(info.ImgUrl) || !string.IsNullOrEmpty(info.ImgPath))
                             {
-                                <img src="@(info.ImgPath ?? info.ImgUrl)" height="100" />
+                                <img src="@(string.IsNullOrEmpty(info.ImgPath) ? info.ImgUrl : info.ImgPath)" height="100" />
                             }
                         </td>
                         <td class="text-muted">
@@ -53,6 +53,9 @@
                         </td>
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">
+                                <a data-confirm="@Url.Content("/SendRecord/DoDown?Id=" + info.Id)" title="下载" class="btn bg-yellow">
+                                    下载图
+                                </a>
                                 <!--没有图片且未生成文章时，可调用绘图-->
                                 @if (string.IsNullOrEmpty(info.ImgUrl) && string.IsNullOrEmpty(info.Content))
                                 {

@@ -22,13 +22,23 @@ namespace AIText
 
         public static SqlSugarClient InitDB()
         {
-            return new SqlSugarClient(new ConnectionConfig()
+            var config = new ConnectionConfig()
             {
                 ConnectionString = ConnectionString,
-                DbType = SqlSugar.DbType.MySql,
+                DbType = DbType.MySql,
                 IsAutoCloseConnection = true,
-                InitKeyType = InitKeyType.SystemTable,
-            });
+            };
+            var db = new SqlSugarClient(config);
+#if DEBUG
+            db.Aop.OnLogExecuting = (sql, pars) =>
+            {
+                // 开发环境下在vs控制台输出sql
+                System.Diagnostics.Debug.WriteLine(sql + "\r\n" + System.Text.Json.JsonSerializer.Serialize(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
+
+                //LogHelper.LogWrite(sql + "\r\n" +Db.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
+            };
+#endif
+            return db;
         }
     }
     public class Startup
