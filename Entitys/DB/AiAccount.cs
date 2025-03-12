@@ -1,7 +1,7 @@
 ﻿using SqlSugar;
 using System;
 
-namespace AIText
+namespace Entitys
 {
     [SugarTable("ai_account")]
     public class AiAccount

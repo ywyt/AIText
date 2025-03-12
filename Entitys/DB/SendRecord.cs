@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AIText
+namespace Entitys
 {
     [SugarTable("send_record")]
     public class SendRecord

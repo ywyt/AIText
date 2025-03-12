@@ -1,6 +1,6 @@
 ﻿using SqlSugar;
 using System;
-namespace AIText
+namespace Entitys
 {
     [SugarTable("site_account")]
     public class SiteAccount

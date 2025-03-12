@@ -81,3 +81,5 @@ _ReSharper*/
 *.swp
 *.swo
 *.swn
+
+**/Resources/Images/

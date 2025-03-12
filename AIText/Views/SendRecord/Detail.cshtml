@@ -1,4 +1,4 @@
-﻿@model AIText.SendRecord
+﻿@model Entitys.SendRecord
 @{
 
 }
@@ -70,8 +70,8 @@
                 @if (!string.IsNullOrEmpty(Model.SyncUrl))
                 {
                     <div class="col-3 mb-3">
-                        <label class="form-label invisible">预览</label>
-                        <a href="@Model.SyncUrl" class="btn btn-secondary" target="_blank">
+                        <label class="form-label invisible">查看</label>
+                        <a href="@Model.SyncUrl" class="btn btn-primary" target="_blank">
                             查看
                         </a>
                     </div>

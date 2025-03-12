@@ -4,6 +4,7 @@ using SqlSugar;
 using System.Threading.Tasks;
 using System;
 using AIText;
+using Entitys;
 
 namespace AIText.Controllers
 {

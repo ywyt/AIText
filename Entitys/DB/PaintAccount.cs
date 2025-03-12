@@ -1,7 +1,7 @@
 ﻿using SqlSugar;
 using System;
 
-namespace AIText
+namespace Entitys
 {
     /// <summary>
     /// 绘图账号

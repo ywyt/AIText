@@ -1,7 +1,7 @@
 ﻿using SqlSugar;
 using System;
 
-namespace AIText
+namespace Entitys
 {
     [SugarTable("business_keyword")]
     public class BusinessKeyword

@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIText", "AIText\AIText.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Entitys", "Entitys\Entitys.csproj", "{D7B6D6B7-C885-42A8-ACE7-100DE471845C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Work", "Work\Work.csproj", "{360C141D-DFC7-47A1-8F06-B5A2A503BADD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuartzTask", "QuartzTask\QuartzTask.csproj", "{3CA3E295-2CA9-4F85-B595-35AD2DD9D6F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{D7B6D6B7-C885-42A8-ACE7-100DE471845C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7B6D6B7-C885-42A8-ACE7-100DE471845C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7B6D6B7-C885-42A8-ACE7-100DE471845C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{360C141D-DFC7-47A1-8F06-B5A2A503BADD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{360C141D-DFC7-47A1-8F06-B5A2A503BADD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{360C141D-DFC7-47A1-8F06-B5A2A503BADD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{360C141D-DFC7-47A1-8F06-B5A2A503BADD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3CA3E295-2CA9-4F85-B595-35AD2DD9D6F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3CA3E295-2CA9-4F85-B595-35AD2DD9D6F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3CA3E295-2CA9-4F85-B595-35AD2DD9D6F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3CA3E295-2CA9-4F85-B595-35AD2DD9D6F2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

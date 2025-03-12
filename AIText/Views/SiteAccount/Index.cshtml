@@ -41,7 +41,7 @@
                         <div>
                             <select asp-for="SiteType" class="form-control">
                                 <option value=""></option>
-                                @foreach (SiteType item in Enum.GetValues(typeof(SiteType)))
+                                @foreach (Entitys.SiteType item in Enum.GetValues(typeof(Entitys.SiteType)))
                                 {
                                     <option value="@item.GetHashCode()">@item.ExtName()</option>
                                 }

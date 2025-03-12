@@ -1,4 +1,4 @@
-﻿@model AIText.SiteAccount
+﻿@model Entitys.SiteAccount
 @{
 
 }
@@ -23,7 +23,7 @@
                     <label class="form-label">网站类型</label>
                     <select asp-for="SiteType" class="form-control">
                         <option value=""></option>
-                        @foreach (SiteType item in Enum.GetValues(typeof(SiteType)))
+                        @foreach (Entitys.SiteType item in Enum.GetValues(typeof(Entitys.SiteType)))
                         {
                             <option value="@item.GetHashCode()">@item.ExtName()</option>
                         }
@@ -69,7 +69,7 @@
                 </div>
                 <div class="col-6 mb-3 enable-send invisible">
                     <label class="form-label">每天创建的文章数</label>
-                    <input asp-for="CountPerDay" type="number" class="bg-focus form-control parsley-validated" />
+                    <input asp-for="CountPerDay" type="number" min="1" max="24" class="bg-focus form-control parsley-validated" />
                     <span asp-validation-for="CountPerDay" class="text-danger"> </span>
                 </div>
                 <div class="col-12 enable-send d-none">

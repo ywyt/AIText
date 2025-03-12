@@ -1,4 +1,5 @@
 ﻿using commons.util;
+using Entitys;
 
 namespace AIText.Models.SiteAccount
 {

@@ -1,6 +1,6 @@
-﻿@model AIText.SendRecord
+﻿@model Entitys.SendRecord
 @{
-    var settings = ViewData["Sites"] as List<AIText.SiteAccount>;
+    var settings = ViewData["Sites"] as List<Entitys.SiteAccount>;
 }
 <div class="modal-content">
     <form class="form-horizontal" data-ajax="true" data-ajax-complete="ajaxRvCompleted" asp-action="DoAdd" asp-controller="SendRecord" data-ajax-method="post">

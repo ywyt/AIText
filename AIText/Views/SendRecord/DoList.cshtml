@@ -53,9 +53,6 @@
                         </td>
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">
-                                <a data-confirm="@Url.Content("/SendRecord/DoDown?Id=" + info.Id)" title="下载" class="btn bg-yellow">
-                                    下载图
-                                </a>
                                 <!--没有图片且未生成文章时，可调用绘图-->
                                 @if (string.IsNullOrEmpty(info.ImgUrl) && string.IsNullOrEmpty(info.Content))
                                 {
@@ -82,12 +79,12 @@
                                     }
                                     else if (!string.IsNullOrEmpty(info.SyncUrl))
                                     {
-                                        <a href="@info.SyncUrl" class="btn btn-secondary" target="_blank">
+                                        <a href="@info.SyncUrl" class="btn btn-primary" target="_blank">
                                             文章查看
                                         </a>
                                     }
                                 }
-                                <a href="@Url.Content("~/SendRecord/Edit?Id=" + info.Id)" class="btn btn-azure">
+                                <a href="@Url.Content("~/SendRecord/Detail?Id=" + info.Id)" class="btn btn-azure">
                                     查看
                                 </a>
                                 <a data-confirm="/SendRecord/DoDelete?Id=@info.Id" title="是否删除" class="btn btn-danger">

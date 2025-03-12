@@ -1,5 +1,6 @@
 ﻿using AIText.Models.AiAccount;
 using commons.util;
+using Entitys;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using model.excel;

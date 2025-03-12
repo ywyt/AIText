@@ -1,8 +1,10 @@
 ﻿using AIText.Models.SendRecord;
 using Azure;
 using Dm;
+using Entitys;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
 using NPOI.HSSF.Record.Chart;
 using NPOI.SS.UserModel;
@@ -314,15 +316,13 @@ namespace AIText.Controllers
             else
             {
                 // 从文章中提取标题
-                // 使用正则提取 <h1> 标签中的内容
-                Match titleMatch = Regex.Match(content, @"<h1>(.*?)<\/h1>", RegexOptions.Singleline);
-                string title = titleMatch.Success ? titleMatch.Groups[1].Value : "No Title";
+                (string title, string body) = ExtractTitleAndBody(content);
 
-                // 移除 <h1> 标签，留下正文
-                string body = Regex.Replace(content, @"<h1>.*?<\/h1>", "", RegexOptions.Singleline).Trim();
                 if (!string.IsNullOrEmpty(sendRecord.ImgPath))
                 {
-                    body.Replace(sendRecord.ImgUrl, sendRecord.ImgPath);
+                    string baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
+                    string webPath = sendRecord.ImgPath.Replace('\\', '/').TrimStart('/');
+                    body.Replace(sendRecord.ImgUrl, $"{baseUrl}/{webPath}");
                 }
                 // 更新文章
                 var ret = Db.Updateable<SendRecord>()
@@ -336,6 +336,46 @@ namespace AIText.Controllers
                 rv.status = ret > 0;
                 return Json(rv);
             }
+        }
+
+        public IActionResult DoTitle(int Id)
+        {
+            ReturnValue<string> rv = new ReturnValue<string>();
+            var sendRecord = Db.Queryable<SendRecord>().Where(o => o.Id == Id).First();
+
+
+            // 从文章中提取标题
+            (string title, string body) = ExtractTitleAndBody(sendRecord.Content);
+
+            if (!string.IsNullOrEmpty(sendRecord.ImgPath))
+            {
+                string baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
+                string webPath = sendRecord.ImgPath.Replace('\\', '/').TrimStart('/');
+                body.Replace(sendRecord.ImgUrl, $"{baseUrl}/{webPath}");
+            }
+            // 更新文章
+            var ret = Db.Updateable<SendRecord>()
+                        .SetColumns(o => o.Title == title)
+                        .SetColumns(o => o.Content == body)
+                        .Where(o => o.Id == Id).ExecuteCommand();
+            rv.status = ret > 0;
+            return Json(rv);
+        }
+
+
+        static (string title, string body) ExtractTitleAndBody(string content)
+        {
+            // 正则匹配 <h1>、<h2>、<h3> 中的第一个
+            Match titleMatch = Regex.Match(content, @"<(h[1-3])>(.*?)<\/\1>", RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+            string title = "No Title";
+            if (titleMatch.Success)
+            {
+                title = titleMatch.Groups[2].Value.Trim(); // 提取标题文本
+                content = content.Replace(titleMatch.Value, "").Trim(); // 移除标题
+            }
+
+            return (title, content);
         }
 
         public async Task<IActionResult> DoSync(int Id)
@@ -458,34 +498,12 @@ namespace AIText.Controllers
         }
 
 
-        public IActionResult Edit(int Id)
+        public IActionResult Detail(int Id)
         {
             var model = Db.Queryable<SendRecord>().Where(t => t.Id == Id).First();
             return View(model);
         }
-        public IActionResult DoEdit(SendRecord edit)
-        {
-            var rv = new ReturnValue<string>();
-            var model = Db.Queryable<SendRecord>().Where(t => t.Id == edit.Id).First();
-            model.Prompt = edit.Prompt;
-            model.Title = edit.Title;
-            model.Content = edit.Content;
-            model.IsSync = edit.IsSync;
-            model.SyncSite = edit.SyncSite;
-            model.SyncTime = edit.SyncTime;
-            model.UpdateTime = DateTime.Now;
-            var num = Db.Updateable<SendRecord>(model).ExecuteCommand();
-            if (num == 1)
-            {
-                rv.True("修改成功");
-                return Json(rv);
-            }
-            else
-            {
-                rv.False("操作失败");
-                return Json(rv);
-            }
-        }
+
         public IActionResult DoDelete(int Id)
         {
             var rv = new ReturnValue<string>();
