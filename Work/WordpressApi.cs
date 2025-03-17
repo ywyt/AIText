@@ -83,5 +83,50 @@ namespace Work
             }
             return rv;
         }
+
+        public static async Task<ReturnValue<string>> UploadImage(string site, string accesskey, string path, string keyword)
+        {
+            ReturnValue<string> rv = new ReturnValue<string>();
+            var options = new RestClientOptions(site);
+            var client = new RestClient(options);
+            var request = new RestRequest("/wp-json/wp/v2/media", Method.Post);
+            request.AddHeader("Authorization", $"Bearer {accesskey}");
+            request.AlwaysMultipartFormData = true;
+            request.AddFile("file", path);
+
+            RestResponse response = await client.ExecuteAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                if (!string.IsNullOrWhiteSpace(response.Content) && (response.Content.StartsWith("{") || response.Content.StartsWith("[")))
+                {
+                    try
+                    {
+                        // 解析JSON响应
+                        var jsonResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(response.Content);
+                        // 提取链接
+                        string source_url = jsonResponse["source_url"];
+                        rv.True(source_url);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                        logger.Info(response.Content);
+                        rv.False("获取json结果出错");
+                    }
+                }
+                else
+                {
+                    logger.Info(response.Content);
+                    rv.False(response.StatusCode + "|" + response.Content);
+                }
+            }
+            else
+            {
+                string msg = response.StatusCode.ObjToInt() + "|" + response.ErrorMessage + response.Content;
+                logger.Info(msg);
+                rv.False(msg);
+            }
+            return rv;
+        }
     }
 }

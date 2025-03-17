@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Work;
 
@@ -17,6 +18,14 @@ namespace QuartzTask
         static bool isRunning = false;
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         static Random RandomMac = new Random();
+        static List<PromptTemplate> promptTempList = new List<PromptTemplate>();
+        static int promptTempIdx = 0;
+
+        /// <summary>
+        /// 控制同时执行调用接口的数量
+        /// </summary>
+        public const int MAX_API_COUNT = 4;
+
         public async Task Execute(IJobExecutionContext context)
         {
             if (isRunning)
@@ -26,12 +35,23 @@ namespace QuartzTask
             }
             logger.Info($"任务开始执行时间: {DateTime.Now}");
 
+            // 初始化参数
             isRunning = true;
+
+            if (promptTempIdx > 1000)
+            {
+                promptTempIdx = 0;
+            }
 
             // 业务逻辑
             var Db = SqlSugarHelper.InitDB();
+            // 可用的指令模板
+            promptTempList = Db.Queryable<PromptTemplate>().Where(o => o.IsEnable == true).ToList();
 
             var siteList = Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true && o.StartDate <= DateTime.Now).ToList();
+
+            // 控制同时执行调用接口的数量的信号量
+            var semaphore = new SemaphoreSlim(MAX_API_COUNT);
 
             foreach (var item in siteList)
             {
@@ -57,10 +77,15 @@ namespace QuartzTask
                     // 未完成的继续处理
                     foreach (var sending in sendings)
                     {
-                        await Send(Db, item, sending);
+                        await semaphore.WaitAsync();
+                        _ = Task.Run(async () =>
+                        {
+                            await Send(Db, item, sending);
+                            semaphore.Release();
+                        });
                     }
                     // 等待以免API调用间隔过短
-                    await Task.Delay(30000);
+                    await Task.Delay(1000);
                 }
 
                 // 计算执行时间点（动态计算）
@@ -75,10 +100,15 @@ namespace QuartzTask
                 var record = CreateRecord(Db, item);
                 if (record.status && record.value != null)
                 {
-                    await Send(Db, item, record.value);
+                    await semaphore.WaitAsync();
+                    _ = Task.Run(async () =>
+                    {
+                        await Send(Db, item, record.value);
+                        semaphore.Release();
+                    });
                 }
                 // 等待以免API调用间隔过短
-                await Task.Delay(10000);
+                await Task.Delay(1000);
             }
 
             logger.Info($"任务结束执行时间: {DateTime.Now}");
@@ -122,9 +152,9 @@ namespace QuartzTask
                 return rv;
             }
 
-            // 抽取指令
-            var promptTempList = Db.Queryable<PromptTemplate>().ToList();
-            var promptTemp = promptTempList[RandomMac.Next(0, promptTempList.Count - 1)];
+            // 抽取指令，多个站点轮流使用模板，也是一种随机（同理于随机播放的歌单）
+            Interlocked.Increment(ref promptTempIdx);
+            var promptTemp = promptTempList[promptTempIdx % promptTempList.Count];
 
             var urlList = Db.Queryable<SiteKeyword>().Where(o => o.SiteId == setting.Id)
                 .Select(o => o.URL)
@@ -179,7 +209,7 @@ namespace QuartzTask
             // 没有生成文章
             if (string.IsNullOrEmpty(sendRecord.Content))
             {
-                var rvAi = await InvokeApi.DoAI(Db, sendRecord.Id);
+                var rvAi = await InvokeApi.DoAI(Db, sendRecord);
                 if (rvAi.status == false)
                 {
                     logger.Info("生成文章出错" + rvAi.errorsimple);
@@ -190,7 +220,7 @@ namespace QuartzTask
             // 最后同步到站点
             if (site.SiteType == SiteType.WordPress)
             {
-                var rvSync = await InvokeApi.DoSync(Db, sendRecord.Id);
+                var rvSync = await InvokeApi.DoSync(Db, sendRecord);
                 return rvSync;
             }
             else
