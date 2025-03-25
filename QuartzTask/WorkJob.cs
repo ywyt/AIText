@@ -17,9 +17,6 @@ namespace QuartzTask
     {
         static bool isRunning = false;
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-        static Random RandomMac = new Random();
-        static List<PromptTemplate> promptTempList = new List<PromptTemplate>();
-        static int promptTempIdx = 0;
 
         /// <summary>
         /// 控制同时执行调用接口的数量
@@ -38,15 +35,10 @@ namespace QuartzTask
             // 初始化参数
             isRunning = true;
 
-            if (promptTempIdx > 1000)
-            {
-                promptTempIdx = 0;
-            }
-
             // 业务逻辑
             var Db = SqlSugarHelper.InitDB();
-            // 可用的指令模板
-            promptTempList = Db.Queryable<PromptTemplate>().Where(o => o.IsEnable == true).ToList();
+
+            InvokeApi.Init(Db);
 
             var siteList = Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true && o.StartDate <= DateTime.Now).ToList();
 
@@ -97,7 +89,7 @@ namespace QuartzTask
                     continue;
                 }
                 // 创建新的，当前循环应该执行的
-                var record = CreateRecord(Db, item);
+                var record = await InvokeApi.CreateRecord(Db, item);
                 if (record.status && record.value != null)
                 {
                     await semaphore.WaitAsync();
@@ -132,62 +124,6 @@ namespace QuartzTask
         }
 
         /// <summary>
-        /// 创建记录
-        /// </summary>
-        /// <param name="Db"></param>
-        /// <param name="site"></param>
-        /// <param name="sendRecord"></param>
-        private ReturnValue<SendRecord> CreateRecord(SqlSugarClient Db, SiteAccount setting)
-        {
-            var rv = new ReturnValue<SendRecord>();
-            if (setting == null)
-                return rv;
-
-            // 没使用过的，最少使用量的关键词
-            var siteKeyword = Db.Queryable<SiteKeyword>().Where(o => o.SiteId == setting.Id).OrderBy(o => o.UseCount).First();
-
-            if (siteKeyword == null)
-            {
-                rv.False("没有设置站点关键词");
-                return rv;
-            }
-
-            // 抽取指令，多个站点轮流使用模板，也是一种随机（同理于随机播放的歌单）
-            Interlocked.Increment(ref promptTempIdx);
-            var promptTemp = promptTempList[promptTempIdx % promptTempList.Count];
-
-            var urlList = Db.Queryable<SiteKeyword>().Where(o => o.SiteId == setting.Id)
-                .Select(o => o.URL)
-                .OrderBy(o => SqlFunc.GetRandom()).Take(3).ToList();
-
-            var urlString = string.Join(",", urlList);
-
-            SendRecord sendRecord = new SendRecord
-            {
-                Link = urlString,
-                KeywordId = siteKeyword.Id,
-                Keyword = siteKeyword.Keyword,
-                TemplateId = promptTemp.Id,
-                TemplateName = promptTemp.Name,
-                IsSync = false,
-                SyncSiteId = setting.Id,
-                SyncSite = setting.Site,
-                SyncTime = null,
-                CreateTime = DateTime.Now,
-                UpdateTime = null
-            };
-            var ret = Db.Insertable(sendRecord).ExecuteCommand();
-            rv.status = ret > 0;
-            if (rv.status)
-            {
-                rv.value = sendRecord;
-                Db.Updateable<SiteKeyword>().SetColumns(o => o.UseCount == (o.UseCount + 1)).Where(o => o.Id == siteKeyword.Id).ExecuteCommand();
-            }
-            return rv;
-
-        }
-
-        /// <summary>
         /// 处理发送
         /// </summary>
         /// <param name="Db"></param>
@@ -195,15 +131,15 @@ namespace QuartzTask
         /// <param name="sendRecord"></param>
         private static async Task<ReturnValue<string>> Send(SqlSugarClient Db, SiteAccount site, SendRecord sendRecord)
         {
-            //  没有图片时绘图
+            //  没有图片时选择图片
             if (string.IsNullOrEmpty(sendRecord.ImgUrl) && string.IsNullOrEmpty(sendRecord.ImgPath))
             {
-                var rvDraw = await InvokeApi.DoDraw(Db, sendRecord);
-                if (rvDraw.status == false)
-                {
-                    logger.Info("画图出错" + rvDraw.errorsimple);
-                    return rvDraw;
-                }
+                //var rvDraw = await InvokeApi.DoDraw(Db, sendRecord);
+                //if (rvDraw.status == false)
+                //{
+                //    logger.Info("画图出错" + rvDraw.errorsimple);
+                //    return rvDraw;
+                //}
             }
 
             // 没有生成文章
@@ -229,5 +165,6 @@ namespace QuartzTask
             }
 
         }
+
     }
 }

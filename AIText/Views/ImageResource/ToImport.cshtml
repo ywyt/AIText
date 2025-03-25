@@ -1,0 +1,75 @@
+﻿@model List<commons.import.ImportImageResourceDto>
+@{
+    
+}
+
+@if (Model.Count != 0)
+{
+    <div class="card-header">
+        @* <h4 class="card-title"></h4> *@
+    </div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>款式</th>
+                    <th>颜色</th>
+                    <th>图片路径</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var loopi = 0;
+                }
+                @foreach (var info in Model)
+                {
+                    <tr>
+                        <td class="text-muted">
+                            <input type="hidden" name="[@loopi].Idx" value="@info.Idx" />
+                            <input type="hidden" name="[@loopi].Id" value="@info.Id" />
+                            @info.Id
+                        </td>
+                        <td class="text-muted">
+                            <input type="hidden" name="[@loopi].Style" value="@info.Style" />
+                            @info.Style
+                        </td>
+                        <td class="text-muted">
+                            <input type="hidden" name="[@loopi].Color" value="@info.Color" />
+                            @info.Color
+                        </td>
+                        <td class="text-muted">
+                            <input type="hidden" name="[@loopi].ImagePath" value="@info.ImagePath" />
+                            @info.ImagePath
+                        </td>
+                    </tr>
+                    @if (!string.IsNullOrEmpty(info.ErrMsg))
+                    {
+                        <tr style="color:red; @(loopi%2==0 ? "background-color:#efffff;": "")">
+                            <td></td>
+                            <td colspan="8">
+                                @info.ErrMsg
+                            </td>
+
+                        </tr>
+                    }
+                    loopi++;
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (Model.Count == 0)
+{
+
+    <div class="empty">
+        <div class="empty-img">
+            <img src="~/static/illustrations/undraw_printing_invoices_5r4r.svg" height="128" alt="">
+        </div>
+        <p class="empty-title">没有数据</p>
+        <p class="empty-subtitle text-muted">
+            Try to change your Excel file.
+        </p>
+    </div>
+}

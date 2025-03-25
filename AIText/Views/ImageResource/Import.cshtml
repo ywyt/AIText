@@ -1,0 +1,125 @@
+﻿<script>
+
+</script>
+<div class="row row-cards mt-3 card">
+    <div class="card-header">
+        <h4><i class="card-title"></i> 导入商务交易词</h4>
+    </div>
+
+    <div class="row">
+
+        <div class="col-lg-12">
+            <div class="card-body">
+
+                <form id="prepareExcel" class="card" data-ajax="true" data-ajax-complete="previewComplete" data-ajax-update="#divlist" data-ajax-mode="replace" asp-action="ToImport" asp-controller="ImageResource" enctype="multipart/form-data" data-ajax-method="post">
+                    <div class="row card-body">
+                        <div class="col-12 mb-3">
+
+                            <input type="file" id="excelfile" name="excelfile" multiple class="form-control" required /> <br />
+                        </div>
+
+                        <div class=" card-footer text-end" id="previewDiv">
+
+                            <div class="d-flex">
+                                <input value="上传预览" class="btn btn-primary ms-auto" type="submit" id="asubmit" />
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <form id="importForm" class="card" data-ajax="true" data-ajax-complete="ajaxRvCompletedToImageResource" data-ajax-begin="ajaxRvBeforeImageResource" data-ajax-update="#errMsgDiv" asp-action="DoImport1" asp-controller="ImageResource" enctype="multipart/form-data" data-ajax-method="post"
+                      style="display:none;">
+                    <div class="row card-body">
+                        <div class=" card-footer text-end">
+                            <div class="d-flex">
+                                <input value="开始导入" class="btn btn-primary ms-auto" type="submit" id="asubmit" />
+                            </div>
+                        </div>
+                    </div>
+                    <div id="divlist">
+                    </div>
+                </form>
+                <div id="errMsgDiv">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function previewComplete(xhr) {
+        if ($(this).html().length > 0) {
+            $("#importForm").show();
+            $("#previewDiv").hide();
+        }
+    }
+
+    var ajaxRvBeforeImageResource = function(xhr, e) {
+        if ($("#importForm tr").length < 1000 && $("#importForm tr").length > 1) {
+            return true;
+        }
+        var formData = serializeDynamicForm("#importForm");
+        $.ajax({
+            type: "POST",
+            url: "@Url.Action("DoImport", "ImageResource")",
+            contentType: "application/json",
+            data: JSON.stringify(formData),
+            success: function(data){
+                console.log(data);
+                completeHandle(data);
+            }
+        })
+        return false;
+    }
+    function serializeDynamicForm(formId) {
+        const formData = $(formId).serializeArray();
+        const result = {};
+
+        formData.forEach(item => {
+            const match = item.name.match(/\[(\d+)\]\.(\w+)/);
+            if (match) {
+                const index = match[1];
+                const propertyName = match[2];
+
+                if (!result[index]) {
+                    result[index] = {};
+                }
+
+                result[index][propertyName] = item.value;
+            }
+        });
+
+        // 将对象转换为数组
+        const resultArray = Object.values(result);
+        return resultArray;
+    }
+
+
+    var ajaxRvCompletedToImageResource = function (data) {
+        if (data.status != 200) {
+            $.tipsError(data.responseText);
+            return;
+        }
+        if (data.responseJSON) {
+            completeHandle(data.responseJSON);
+        }
+    };
+    function completeHandle(data) {
+        if (data != false && data.status) {
+            $.tipsOk("操作成功!" + (data.errorsimple || ""));
+            if (data.errordetailed) {
+                    // 将 \n 替换为 <br>
+                let replacedText = data.errordetailed.replace(/\n/g, "<br>");
+                $(".card-header h4").html(replacedText);
+                $(".card-header h4").append("<br />").append(data.errorsimple);
+            } else {
+                setTimeout(function () {
+                    window.location = '/ImageResource/Index';
+                }, 1500);
+            }
+        }
+        else {
+            $.tipsError(data.errorsimple);
+        }
+    }
+
+</script>

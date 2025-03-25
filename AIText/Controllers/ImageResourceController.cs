@@ -1,10 +1,9 @@
-﻿using AIText.Models.PaintAccount;
+﻿using AIText.Models.ImageResource;
 using commons.util;
 using Entitys;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using model.excel;
-using NPOI.OpenXmlFormats.Dml.Diagram;
 using NPOI.SS.UserModel;
 using SqlSugar;
 using System;
@@ -16,10 +15,10 @@ using System.Threading.Tasks;
 
 namespace AIText.Controllers
 {
-    public class PaintAccountController : BaseController
+    public class ImageResourceController : BaseController
     {
         private readonly SqlSugarClient Db;
-        public PaintAccountController(SqlSugarClient _Db)
+        public ImageResourceController(SqlSugarClient _Db)
         {
             Db = _Db;
         }
@@ -27,13 +26,13 @@ namespace AIText.Controllers
         {
             return View();
         }
-        public async Task<IActionResult> DoListAsync(PaintAccountSearch search)
+        public async Task<IActionResult> DoListAsync(ImageResourceSearch search)
         {
             await TryUpdateModelAsync(search.Pager);
             var query = SearchSql(search);
-            var pageList = new commons.util.PageList<PaintAccountDto>();
+            var pageList = new commons.util.PageList<ImageResourceDto>();
             int count = 0;
-            pageList.List = query.Select<PaintAccountDto>().ToPageList(search.Pager.PageIndex, search.Pager.PageSize, ref count);
+            pageList.List = query.Select<ImageResourceDto>().ToPageList(search.Pager.PageIndex, search.Pager.PageSize, ref count);
             pageList.PagerModel = new commons.util.PageModel()
             {
                 PageSize = search.Pager.PageSize,
@@ -42,66 +41,24 @@ namespace AIText.Controllers
             };
             return PartialView(pageList);
         }
-        public IActionResult Add()
-        {
 
-            return PartialView(new PaintAccount());
-        }
-        public IActionResult DoAdd(PaintAccount add)
-        {
-            var rv = new ReturnValue<string>();
-            add.Id = Guid.NewGuid().ToString();
-            var now = DateTime.Now;
-            add.CreateTime = now;
-            add.UpdateTime = now;
-            var num = Db.Insertable<PaintAccount>(add).ExecuteCommand();
-            if (num == 1)
-            {
-                rv.True("新建成功");
-                return Json(rv);
-            }
-            else
-            {
-                rv.False("操作失败");
-                return Json(rv);
-            }
-        }
-        public IActionResult Edit(string Id)
-        {
-            var model = Db.Queryable<PaintAccount>().Where(t => t.Id == Id).First();
-            return PartialView(model);
-        }
-        public IActionResult DoEdit(PaintAccount edit)
-        {
-            var rv = new ReturnValue<string>();
-            var model = Db.Queryable<PaintAccount>().Where(t => t.Id == edit.Id).First();
-
-            edit.UpdateTime = DateTime.Now;
-            var num = Db.Updateable<PaintAccount>(edit).ExecuteCommand();
-            if (num == 1)
-            {
-                rv.True("修改成功");
-                return Json(rv);
-            }
-            else
-            {
-                rv.False("操作失败");
-                return Json(rv);
-            }
-        }
         public IActionResult DoDelete(string Id)
         {
             var rv = new ReturnValue<string>();
-            Db.Deleteable<PaintAccount>().Where(it => it.Id == Id).ExecuteCommand();
+            Db.Deleteable<ImageResource>().Where(it => it.Id == Id).ExecuteCommand();
             rv.True("删除完成");
             return Json(rv);
         }
-        private ISugarQueryable<PaintAccount> SearchSql(PaintAccountSearch search)
+        private ISugarQueryable<ImageResource> SearchSql(ImageResourceSearch search)
         {
-            var query = Db.Queryable<PaintAccount>();
-            if (!string.IsNullOrEmpty(search.Site))
+            var query = Db.Queryable<ImageResource>();
+            if (!string.IsNullOrEmpty(search.Style))
             {
-                query.Where(t => t.Site.Contains(search.Site));
+                query.Where(t => t.Style == search.Style);
+            }
+            if (!string.IsNullOrEmpty(search.Color))
+            {
+                query.Where(t => t.Color == search.Color);
             }
 
             return query;
@@ -118,18 +75,17 @@ namespace AIText.Controllers
         public async Task<IActionResult> ToImportAsync(IFormFile excelfile)
         {
             if (excelfile == null)
-                return PartialView(new List<commons.import.ImportPaintAccountDto>());
-            var list = await ExcelHelper<commons.import.ImportPaintAccountDto>.ImportFromExcel(excelfile);
+                return PartialView(new List<commons.import.ImportImageResourceDto>());
+            var list = await ExcelHelper<commons.import.ImportImageResourceDto>.ImportFromExcel(excelfile);
 
             #region 验证
 
-            List<commons.import.ImportPaintAccountDto> errlist = new List<commons.import.ImportPaintAccountDto>();
+            List<commons.import.ImportImageResourceDto> errlist = new List<commons.import.ImportImageResourceDto>();
 
             int loopi = 0;
             foreach (var item in list)
             {
                 loopi++;
-
 
                 item.Idx = loopi;
 
@@ -143,47 +99,87 @@ namespace AIText.Controllers
         }
 
         [HttpPost]
-        public IActionResult DoImport1(List<commons.import.ImportPaintAccountDto> imports)
+        public IActionResult DoImport([FromBody]List<commons.import.ImportImageResourceDto> imports)
+        {
+            var rv = ImportList(imports);
+
+            return Json(rv);
+        }
+
+        [HttpPost]
+        // ASP.NET Core在FormReader内强制将键/值的长度限制限制为2048，改变这个大小以便传入更大的表单内容
+        [RequestFormLimits(ValueCountLimit = ushort.MaxValue)]
+        [RequestSizeLimit(10 * 1024 * 1024)] // 允许最大 10MB 请求大小
+        public IActionResult DoImport1(List<commons.import.ImportImageResourceDto> imports)
+        {
+            var rv = ImportList(imports);
+
+            return Json(rv);
+        }
+
+        private ReturnValue<string> ImportList(List<commons.import.ImportImageResourceDto> imports)
         {
             ReturnValue<string> rv = new ReturnValue<string>();
+
+            if ((imports?.Count > 0) == false)
+            {
+                rv.False("参数错误");
+                return rv;
+            }
             rv.status = true;
             List<string> errMsg = new List<string>();
-            List<PaintAccount> insertList = new List<PaintAccount>();
-            List<PaintAccount> updateList = new List<PaintAccount>();
+            List<ImageResource> insertList = new List<ImageResource>();
+            List<ImageResource> updateList = new List<ImageResource>();
             foreach (var item in imports)
             {
-                if (string.IsNullOrEmpty(item.AccessKey) && string.IsNullOrEmpty(item.SecretKey))
+                if (string.IsNullOrEmpty(item.Style))
                 {
-                    rv.status = false;
-                    errMsg.Add($"{item.Idx}密钥不能为空");
+                    errMsg.Add($"{item.Idx}款式不能为空");
                     continue;
                 }
-                if (string.IsNullOrEmpty(item.主键))
+                if (string.IsNullOrEmpty(item.Color))
                 {
-                    insertList.Add(new PaintAccount
+                    errMsg.Add($"{item.Idx}颜色不能为空");
+                    continue;
+                }
+                if (string.IsNullOrEmpty(item.ImagePath))
+                {
+                    errMsg.Add($"{item.Idx}文图片路径不能为空");
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(item.Id) && Db.Queryable<ImageResource>().Any(o => o.Style == item.Style && o.Color == item.Color && o.ImagePath == item.ImagePath))
+                {
+                    errMsg.Add($"{item.Idx} 已存在{item.Style}、{item.Color}的图片{item.ImagePath}");
+                    continue;
+                }
+                else if (!string.IsNullOrEmpty(item.Id) && Db.Queryable<ImageResource>().Any(o => o.Style == item.Style && o.Color == item.Color && o.ImagePath == item.ImagePath && o.Id != item.Id))
+                {
+                    errMsg.Add($"{item.Idx} 已存在{item.Style}、{item.Color}的图片{item.ImagePath}");
+                    continue;
+                }
+                if (string.IsNullOrEmpty(item.Id))
+                {
+                    insertList.Add(new ImageResource
                     {
                         Id = Guid.NewGuid().ToString(),
-                        Site = item.站点,
-                        AccessKey = item.AccessKey,
-                        SecretKey = item.SecretKey,
-                        IsEnable = item.是否启用 == "是" ? true : false,
+                        ImagePath = item.ImagePath,
+                        Color = item.Color,
+                        Style = item.Style,
                         CreateTime = DateTime.Now,
-                        UpdateTime = null
                     });
                 }
                 else
                 {
-                    var model = Db.Queryable<PaintAccount>().Where(t => t.Id == item.主键).First();
+                    var model = Db.Queryable<ImageResource>().Where(t => t.Id == item.Id).First();
                     if (model == null)
                     {
                         rv.status = false;
-                        errMsg.Add($"{item.Idx}账号不存在");
+                        errMsg.Add($"{item.Idx}不存在");
                         continue;
                     }
-                    model.AccessKey = item.AccessKey;
-                    model.SecretKey = item.SecretKey;
-                    model.IsEnable = item.是否启用 == "是" ? true : false;
-                    model.UpdateTime = DateTime.Now;
+                    model.ImagePath = item.ImagePath;
+                    model.Color = item.Color;
                     updateList.Add(model);
                 }
             }
@@ -198,20 +194,19 @@ namespace AIText.Controllers
             }
             if (errMsg.Count > 0)
             {
-                rv.errorsimple = string.Join("\r\n", errMsg);
-                rv.errorsimple += $"\r\n\r\n导入完成,新增{insertNum}条，修改{updateNum}条";
+                rv.errordetailed = string.Join("\r\n", errMsg);
+                rv.errorsimple = $"导入完成,新增{insertNum}条，修改{updateNum}条";
             }
             else
             {
                 rv.True($"导入完成,新增{insertNum}条，修改{updateNum}条");
             }
-
-            return Json(rv);
+            return rv;
         }
 
-        public IActionResult DoExport(PaintAccountSearch search)
+        public IActionResult DoExport(ImageResourceSearch search)
         {
-            var list = SearchSql(search).Select<ExportPaintAccountDto>().ToList();
+            var list = SearchSql(search).Select<ExportImageResourceDto>().ToList();
             //foreach (var item in list)
             //{
             //    if (!string.IsNullOrEmpty(item.ImageUrl))
@@ -237,12 +232,12 @@ namespace AIText.Controllers
                 return Ok("没有数据导出，请返回修改查询条件");
             }
             //var exportHead = commons.import.ExpportPreProduce.GetHeadColums();
-            var rvList = new commons.import.ExportPaintAccount().SetExport(list);
+            var rvList = new commons.import.ExportImageResource().SetExport(list);
 
             // 转换为XSSFWorkbook
-            var xss = ExcelHelper<commons.import.ExportPaintAccountTemp>.CreateExportXss(rvList, null, null);
+            var xss = ExcelHelper<commons.import.ExportImageResourceTemp>.CreateExportXss(rvList, null, null);
 
-            #region 重新设置图片的单元格大小
+            #region 重新设置单元格大小
 
             // 默认只有一个sheet
             var sheet = xss.GetSheetAt(0);
@@ -264,7 +259,7 @@ namespace AIText.Controllers
                 ms.Position = 0;
                 bytes = ms.ToArray();
             }
-            string filename = "AI账号配置-" + System.DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+            string filename = "图片资源配置-" + System.DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
 
             return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
         }

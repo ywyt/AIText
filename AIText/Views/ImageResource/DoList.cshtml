@@ -1,0 +1,83 @@
+﻿@model commons.util.PageList<AIText.Models.ImageResource.ImageResourceDto>
+@if (Model.List?.Count > 0)
+{
+    <div class="card-header">
+        <h4 class="card-title">列表</h4>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+                <tr>
+                    <th>款式</th>
+                    <th>颜色</th>
+                    <th>图片路径</th>
+                    <th>使用次数</th>
+                    <th class="w-1"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var image in Model.List)
+                {
+                    // 判断图片路径中是否包含斜杠或反斜杠作为分隔符
+                    if (image.ImagePath.Contains("/") || image.ImagePath.Contains("\\"))
+                    {
+                        // 如果是反斜杠，统一转换为斜杠
+                        image.ImagePath = image.ImagePath.Replace("\\", "/");
+
+                        // 检查是否有额外的斜杠，去除多余的斜杠
+                        image.ImagePath = image.ImagePath.TrimStart('/');
+                    }
+
+                    // 使用Uri类来拼接完整的URL
+                    Uri baseURL = new Uri(Work.InvokeApi.SEOBaseURL);
+                    Uri fullURL = new Uri(baseURL, image.ImagePath);
+
+                    <tr data-Id="@image.Id">
+                        <td class="text-muted">
+                            @image.Style
+                        </td>
+                        <td class="text-muted">
+                            @image.Color
+                        </td>
+                        <td class="text-muted">
+                            @image.ImagePath
+                        </td>
+                        <td class="text-muted">
+                            @image.CreateTime
+                        </td>
+
+                        <td class="text-muted">
+                            <div class="btn-list flex-nowrap">
+                                <a href="@fullURL" target="_blank" class="btn btn-white">
+                                    查看
+                                </a>
+                                <a data-confirm="/ImageResource/DoDelete?Id=@image.Id" title="是否删除" class="btn btn-danger">
+                                    删除
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+
+            </tbody>
+        </table>
+
+
+    </div>
+
+    @Html.Pager(Model)
+}
+else
+{
+
+    <div class="empty">
+        <div class="empty-img">
+            <img src="~/static/illustrations/undraw_printing_invoices_5r4r.svg" height="128" alt="">
+        </div>
+        <p class="empty-title">没有找到数据</p>
+        <p class="empty-subtitle text-muted">
+            Try adjusting your search or filter to find what you're looking for.
+        </p>
+    </div>
+}

@@ -28,6 +28,7 @@ namespace Entitys
         public string Content { get; set; }
         public string ErrMsg { get; set; }
         public DateTime? AiTime { get; set; }
+        public string ImgResourceId { get; set; }
         public string ImgUrl { get; set; }
         public string ImgPath { get; set; }
         public DateTime? ImgTime { get; set; }

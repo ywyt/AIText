@@ -53,11 +53,11 @@
                         </td>
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">
-                                <!--没有图片且未生成文章时，可调用绘图-->
+                                <!--没有图片且未生成文章时，可调用图-->
                                 @if (string.IsNullOrEmpty(info.ImgUrl) && string.IsNullOrEmpty(info.Content))
                                 {
-                                    <a data-confirm="@Url.Content("/SendRecord/DoDraw?Id=" + info.Id)" title="是否绘图" class="btn bg-yellow">
-                                        绘图
+                                    <a data-confirm="@Url.Content("/SendRecord/DoDraw?Id=" + info.Id)" title="是否抽取图片" class="btn bg-yellow">
+                                        抽图
                                     </a>
                                 }
                                 @if (string.IsNullOrEmpty(info.Content))

@@ -3,10 +3,13 @@ using NLog;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Work
@@ -16,6 +19,126 @@ namespace Work
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
         public static string BaseUrl = "";
+        public static readonly string SEOBaseURL = "https://sz0088.oss-cn-guangzhou.aliyuncs.com/image/SEO/";
+        static List<PromptTemplate> promptTempList = new List<PromptTemplate>();
+        static int promptTempIdx = 0;
+        static List<string> styles = new List<string>();
+        static List<string> colors = new List<string>();
+
+        public static void Init(SqlSugarClient Db)
+        {
+
+            if (promptTempIdx > 1200)
+            {
+                promptTempIdx = 0;
+            }
+
+            // 可用的指令模板
+            promptTempList = Db.Queryable<PromptTemplate>().Where(o => o.IsEnable == true).ToList();
+            // 款式
+            styles = Db.Queryable<ImageResource>().GroupBy(o => o.Style).Select(o => o.Style).ToList();
+            // 颜色
+            colors = Db.Queryable<ImageResource>().GroupBy(o => o.Color).Select(o => o.Color).ToList();
+        }
+
+        /// <summary>
+        /// 创建记录
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="site"></param>
+        /// <param name="sendRecord"></param>
+        public static async Task<ReturnValue<SendRecord>> CreateRecord(SqlSugarClient Db, SiteAccount setting)
+        {
+            var rv = new ReturnValue<SendRecord>();
+            if (setting == null)
+                return rv;
+
+            // 没使用过的，最少使用量的关键词
+            var siteKeyword = Db.Queryable<SiteKeyword>().Where(o => o.SiteId == setting.Id).OrderBy(o => o.UseCount).First();
+
+            if (siteKeyword == null)
+            {
+                rv.False("没有设置站点关键词");
+                return rv;
+            }
+
+            // 抽取指令，多个站点轮流使用模板，也是一种随机（同理于随机播放的歌单）
+            Interlocked.Increment(ref promptTempIdx);
+            var promptTemp = promptTempList[promptTempIdx % promptTempList.Count];
+
+            // 站点链接
+            var urlList = Db.Queryable<SiteKeyword>().Where(o => o.SiteId == setting.Id)
+                .Select(o => o.URL)
+                .OrderBy(o => SqlFunc.GetRandom()).Take(3).ToList();
+
+            var urlString = string.Join(",", urlList);
+
+            // 选择图片
+            var image = PickupImage(Db, siteKeyword.Keyword);
+            // 判断图片路径中是否包含斜杠或反斜杠作为分隔符
+            if (image.ImagePath.Contains("/") || image.ImagePath.Contains("\\"))
+            {
+                // 如果是反斜杠，统一转换为斜杠
+                image.ImagePath = image.ImagePath.Replace("\\", "/");
+
+                // 检查是否有额外的斜杠，去除多余的斜杠
+                image.ImagePath = image.ImagePath.TrimStart('/');
+            }
+
+            // 使用Uri类来拼接完整的URL
+            Uri baseURL = new Uri(SEOBaseURL);
+            Uri fullURL = new Uri(baseURL, image.ImagePath);
+            SendRecord sendRecord = new SendRecord
+            {
+                Link = urlString,
+                KeywordId = siteKeyword.Id,
+                Keyword = siteKeyword.Keyword,
+                TemplateId = promptTemp.Id,
+                TemplateName = promptTemp.Name,
+                IsSync = false,
+                SyncSiteId = setting.Id,
+                SyncSite = setting.Site,
+                SyncTime = null,
+                CreateTime = DateTime.Now,
+                ImgResourceId = image.Id,
+                ImgUrl = fullURL.ToString()
+            };
+            var ret = Db.Insertable(sendRecord).ExecuteCommand();
+            rv.status = ret > 0;
+            if (rv.status)
+            {
+                rv.value = sendRecord;
+                await Db.Updateable<SiteKeyword>().SetColumns(o => o.UseCount == (o.UseCount + 1)).Where(o => o.Id == siteKeyword.Id).ExecuteCommandAsync();
+                await Db.Updateable<ImageResource>().SetColumns(o => o.UseCount == (o.UseCount + 1)).Where(o => o.Id == image.Id).ExecuteCommandAsync();
+            }
+            return rv;
+
+        }
+
+        public static ImageResource PickupImage(SqlSugarClient Db, string keyword)
+        {
+            // 包含该款式+颜色的
+            if (styles.Any(o => keyword.Contains(o)) && colors.Any(o => keyword.Contains(o)))
+            {
+                // 选择最少使用的
+                var image = Db.Queryable<ImageResource>().Where(o => keyword.Contains(o.Style) && keyword.Contains(o.Color)).OrderBy(o => o.UseCount).First();
+                return image;
+            }
+            // 包含该款式的
+            else if (styles.Any(o => keyword.Contains(o)))
+            {
+                // 选择最少使用的
+                var image = Db.Queryable<ImageResource>().Where(o => keyword.Contains(o.Style)).OrderBy(o => o.UseCount).First();
+                return image;
+            }
+            // 从所有的文件夹中抽取
+            else
+            {
+                var image = Db.Queryable<ImageResource>().OrderBy(o => o.UseCount).OrderBy(o => SqlFunc.GetRandom()).First();
+                return image;
+            }
+
+        }
 
         public static async Task<ReturnValue<string>> DoDraw(SqlSugarClient Db, int Id)
         {
@@ -37,10 +160,10 @@ namespace Work
             {
                 // 生成图片出错写库
                 var msg = imgResult.errorsimple;
-                Db.Updateable<SendRecord>()
+                await Db.Updateable<SendRecord>()
                             .SetColumns(o => o.ImgErrMsg == msg)
                             .SetColumns(o => o.ImgTime == DateTime.Now)
-                            .Where(o => o.Id == sendRecord.Id).ExecuteCommand();
+                            .Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
                 rv.False("生成图片出错" + msg);
                 return rv;
             }
@@ -67,10 +190,10 @@ namespace Work
                 {
                     var msg = imgUrlResult.errordetailed ?? imgUrlResult.errorsimple;
                     // 更新错误信息
-                    var ret = Db.Updateable<SendRecord>()
+                    var ret = await Db.Updateable<SendRecord>()
                                 .SetColumns(o => o.ImgErrMsg == msg)
                                 .SetColumns(o => o.ImgTime == DateTime.Now)
-                                .Where(o => o.Id == id).ExecuteCommand();
+                                .Where(o => o.Id == id).ExecuteCommandAsync();
                     return false;
                 }
             }
@@ -90,11 +213,11 @@ namespace Work
                 logger.Debug(imgUrlResult.value);
                 sendRecord.ImgUrl = imgUrlResult.value;
                 // 更新图片地址
-                var ret = Db.Updateable<SendRecord>()
+                var ret = await Db.Updateable<SendRecord>()
                             .SetColumns(o => o.ImgUrl == imgUrlResult.value)
                             .SetColumns(o => o.ImgPath == imgPaths)
                             .SetColumns(o => o.ImgTime == DateTime.Now)
-                            .Where(o => o.Id == id).ExecuteCommand();
+                            .Where(o => o.Id == id).ExecuteCommandAsync();
                 return ret > 0;
             }
         }
@@ -136,13 +259,13 @@ namespace Work
             {
                 string msg = contentRes.errordetailed ?? contentRes.errorsimple;
                 // 更新文章
-                var ret = Db.Updateable<SendRecord>()
+                var ret = await Db.Updateable<SendRecord>()
                             .SetColumns(o => o.AiSiteId == aiAccount.Id)
                             .SetColumns(o => o.AiSite == aiAccount.Site)
                             .SetColumns(o => o.Prompt == prompt)
                             .SetColumns(o => o.ErrMsg == msg)
                             .SetColumns(o => o.AiTime == DateTime.Now)
-                            .Where(o => o.Id == sendRecord.Id).ExecuteCommand();
+                            .Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
 
                 rv.False("生成文章出错" + msg);
                 return rv;
@@ -164,14 +287,14 @@ namespace Work
                 sendRecord.Title = title;
                 sendRecord.Content = body;
                 // 更新文章
-                var ret = Db.Updateable<SendRecord>()
+                var ret = await Db.Updateable<SendRecord>()
                             .SetColumns(o => o.AiSiteId == aiAccount.Id)
                             .SetColumns(o => o.AiSite == aiAccount.Site)
                             .SetColumns(o => o.Prompt == prompt)
                             .SetColumns(o => o.Title == title)
                             .SetColumns(o => o.Content == body)
                             .SetColumns(o => o.AiTime == DateTime.Now)
-                            .Where(o => o.Id == sendRecord.Id).ExecuteCommand();
+                            .Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
                 rv.status = ret > 0;
                 return rv;
             }
@@ -220,7 +343,7 @@ namespace Work
             }
             // 同步站点
             var syncAccount = Db.Queryable<SiteAccount>().Where(o => o.Id == sendRecord.SyncSiteId).First();
-            if (syncAccount != null)
+            if (syncAccount == null)
             {
                 rv.False("同步站点不存在");
                 return rv;
@@ -241,13 +364,25 @@ namespace Work
                     return rv;
                 }
             }
-            return await Create(Db, syncAccount, sendRecord);
+
+            // 图片没有上传 TODO: 换个判定，wordpress路径 /uploads/
+            if (sendRecord.Content.Contains(sendRecord.ImgUrl))
+            {
+                var upload = await UploadImg(Db, syncAccount, sendRecord);
+                if (upload.status == false)
+                {
+                    rv.False("上传图片出错" + upload.errorsimple);
+                    return rv;
+                }
+            }
+
+            return await PublishArticle(Db, syncAccount, sendRecord);
         }
 
         public static async Task<ReturnValue<string>> UploadImg(SqlSugarClient Db, SiteAccount syncAccount, SendRecord sendRecord, int retry = 0)
         {
             var rv = new ReturnValue<string>();
-            if (string.IsNullOrEmpty(sendRecord.ImgPath))
+            if (string.IsNullOrEmpty(sendRecord.ImgPath) && string.IsNullOrEmpty(sendRecord.ImgUrl))
             {
                 rv.True("没有图片");
                 return rv;
@@ -259,7 +394,45 @@ namespace Work
                 return rv;
             }
 
-            var uploadRes = await WordpressApi.UploadImage(syncAccount.Site, syncAccount.AccessKey, sendRecord.ImgPath, sendRecord.Keyword);
+            ReturnValue<string> uploadRes = new Entitys.ReturnValue<string>();
+            if (!string.IsNullOrEmpty(sendRecord.ImgPath))
+            {
+                uploadRes = await WordpressApi.UploadImage(syncAccount.Site, syncAccount.AccessKey, sendRecord.ImgPath, sendRecord.Keyword);
+            }
+            else
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    try
+                    {
+                        // 发送 GET 请求并获取响应
+                        HttpResponseMessage response = await client.GetAsync(sendRecord.ImgUrl);
+
+                        // 确保响应成功
+                        response.EnsureSuccessStatusCode();
+
+                        // 获取文件名，优先从 Content-Disposition 响应头获取
+                        string filename = GetFilenameFromContentDisposition(response.Content.Headers.ContentDisposition);
+
+                        // 如果 Content-Disposition 中没有文件名，则从 URL 中提取
+                        if (string.IsNullOrEmpty(filename))
+                        {
+                            filename = GetFilenameFromUrl(sendRecord.ImgUrl);
+                        }
+
+                        // 读取响应内容并返回 byte[]
+                        byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();
+                        uploadRes = await WordpressApi.UploadImage(syncAccount.Site, syncAccount.AccessKey, imageBytes, sendRecord.Keyword, filename);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error("下载图片出错");
+                        logger.Error(ex);
+                        uploadRes.False("下载图片出错");
+                    }
+                }
+            }
+
             if (!uploadRes.status)
             {
                 // JWT 无效时，重新获取JWT
@@ -280,7 +453,7 @@ namespace Work
                 else
                 {
                     string msg = uploadRes.errorsimple;
-                    Db.Updateable<SendRecord>().SetColumns(o => o.SyncErrMsg == msg).Where(o => o.Id == sendRecord.Id).ExecuteCommand();
+                    await Db.Updateable<SendRecord>().SetColumns(o => o.SyncErrMsg == msg).Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
                     rv.False("上传图片出错");
                     return rv;
                 }
@@ -288,12 +461,76 @@ namespace Work
             else
             {
                 rv.True(uploadRes.value);
-                sendRecord.Content?.Replace(sendRecord.ImgUrl, uploadRes.value);
+                if (!string.IsNullOrEmpty(sendRecord.Content) && sendRecord.Content.Contains(sendRecord.ImgUrl))
+                {
+                    sendRecord.Content = sendRecord.Content.Replace(sendRecord.ImgUrl, uploadRes.value);
+                    await Db.Updateable<SendRecord>().SetColumns(o => o.Content == sendRecord.Content).Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
+                }
+
                 return rv;
             }
         }
 
-        private static async Task<ReturnValue<string>> Create(SqlSugarClient Db, SiteAccount syncAccount, SendRecord sendRecord, int retry = 0)
+        /// <summary>
+        /// 从Headers.ContentDisposition获取文件名
+        /// </summary>
+        /// <param name="contentDisposition"></param>
+        /// <returns></returns>
+        private static string GetFilenameFromContentDisposition(ContentDispositionHeaderValue contentDisposition)
+        {
+            if (contentDisposition != null)
+            {
+                // 优先使用 filename* 参数（RFC 5987）
+                if (!string.IsNullOrEmpty(contentDisposition.FileNameStar))
+                {
+                    return contentDisposition.FileNameStar;
+                }
+                // 其次使用 filename 参数（RFC 2183）
+                else if (!string.IsNullOrEmpty(contentDisposition.FileName))
+                {
+                    return contentDisposition.FileName;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 从 URL 中提取文件名
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        private static string GetFilenameFromUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+            {
+                return null;
+            }
+
+            try
+            {
+                // 从 URL 中提取文件名
+                Uri uri = new Uri(url);
+                string path = uri.AbsolutePath;
+                string filename = Path.GetFileName(path);
+                return filename;
+            }
+            catch (UriFormatException)
+            {
+                // 处理无效的 URL
+                Console.WriteLine("Invalid URL format.");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 发布文章
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="syncAccount">站点账号</param>
+        /// <param name="sendRecord">记录</param>
+        /// <param name="retry">重试次数</param>
+        /// <returns></returns>
+        private static async Task<ReturnValue<string>> PublishArticle(SqlSugarClient Db, SiteAccount syncAccount, SendRecord sendRecord, int retry = 0)
         {
             var rv = new ReturnValue<string>();
             var sendRes = await WordpressApi.PostToCreate(syncAccount.Site, syncAccount.AccessKey, sendRecord.Title, sendRecord.Content);
@@ -305,7 +542,7 @@ namespace Work
                     if (retry < 1)
                     {
                         var genRes = await GenAccessToken(Db, syncAccount, sendRecord);
-                        return await Create(Db, syncAccount, sendRecord, ++retry);
+                        return await PublishArticle(Db, syncAccount, sendRecord, ++retry);
                     }
                     else
                     {
@@ -317,14 +554,14 @@ namespace Work
                 else
                 {
                     string msg = sendRes.errorsimple;
-                    Db.Updateable<SendRecord>().SetColumns(o => o.SyncErrMsg == msg).Where(o => o.Id == sendRecord.Id).ExecuteCommand();
+                    await Db.Updateable<SendRecord>().SetColumns(o => o.SyncErrMsg == msg).Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
                     rv.False("发送出错");
                     return rv;
                 }
             }
             else
             {
-                rv.status = UpdateSyncResult(Db, sendRes.value, sendRecord.Id);
+                rv.status = await UpdateSyncResult(Db, sendRes.value, sendRecord.Id);
                 return rv;
             }
         }
@@ -335,16 +572,16 @@ namespace Work
             if (!tokenRes.status)
             {
                 string msg = "获取WP站点的token出错" + tokenRes.errordetailed ?? tokenRes.errorsimple;
-                Db.Updateable<SendRecord>().SetColumns(o => o.SyncErrMsg == msg).Where(o => o.Id == sendRecord.Id).ExecuteCommand();
+                await Db.Updateable<SendRecord>().SetColumns(o => o.SyncErrMsg == msg).Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
                 return false;
             }
             string token = tokenRes.value;
             syncAccount.AccessKey = token;
-            Db.Updateable<SiteAccount>().SetColumns(o => o.AccessKey == token).Where(o => o.Id == syncAccount.Id).ExecuteCommand();
+            await Db.Updateable<SiteAccount>().SetColumns(o => o.AccessKey == token).Where(o => o.Id == syncAccount.Id).ExecuteCommandAsync();
             return true;
         }
 
-        private static bool UpdateSyncResult(SqlSugarClient Db, string sendRes, int Id)
+        private static async Task<bool> UpdateSyncResult(SqlSugarClient Db, string sendRes, int Id)
         {
             var syncUrl = string.Empty;
             if (!string.IsNullOrWhiteSpace(sendRes) && (sendRes.StartsWith("{") || sendRes.StartsWith("[")))
@@ -356,19 +593,19 @@ namespace Work
                 }
                 catch (Exception ex)
                 {
-                    Db.Updateable<SendRecord>()
+                    await Db.Updateable<SendRecord>()
                         .SetColumns(o => o.SyncErrMsg == sendRes)
                         .Where(o => o.Id == Id)
-                        .ExecuteCommand();
+                        .ExecuteCommandAsync();
                     logger.Error(ex);
                     logger.Info(sendRes);
                     return false;
                 }
             }
-            var ret = Db.Updateable<SendRecord>()
+            var ret = await Db.Updateable<SendRecord>()
                         .SetColumns(o => new SendRecord { IsSync = true, SyncUrl = syncUrl, SyncTime = DateTime.Now })
                         .Where(o => o.Id == Id)
-                        .ExecuteCommand();
+                        .ExecuteCommandAsync();
             return ret > 0;
 
         }

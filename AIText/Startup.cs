@@ -3,15 +3,18 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SqlSugar;
+using SqlSugar.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Work;
 
 namespace AIText
 {
@@ -71,7 +74,11 @@ namespace AIText
 
             services.Configure<FormOptions>(options =>
             {
-                options.MultipartBodyLengthLimit = 60000000;
+                options.MultipartBodyLengthLimit = 104857600;
+            });
+            services.Configure<MvcOptions>(options =>
+            {
+                options.MaxModelBindingCollectionSize = 65535; // 允许更大的集合
             });
         }
 
@@ -103,6 +110,8 @@ namespace AIText
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
             });
+
+            InvokeApi.Init(Sql.InitDB());
         }
     }
 }
