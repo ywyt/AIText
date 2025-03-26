@@ -27,7 +27,6 @@ namespace Work
 
         public static void Init(SqlSugarClient Db)
         {
-
             if (promptTempIdx > 1200)
             {
                 promptTempIdx = 0;
@@ -35,6 +34,12 @@ namespace Work
 
             // 可用的指令模板
             promptTempList = Db.Queryable<PromptTemplate>().Where(o => o.IsEnable == true).ToList();
+
+            if (promptTempIdx < promptTempList.Count)
+            {
+                promptTempIdx = new Random().Next(0, promptTempList.Count);
+            }
+
             // 款式
             styles = Db.Queryable<ImageResource>().GroupBy(o => o.Style).Select(o => o.Style).ToList();
             // 颜色
@@ -47,18 +52,20 @@ namespace Work
         /// <param name="Db"></param>
         /// <param name="site"></param>
         /// <param name="sendRecord"></param>
-        public static async Task<ReturnValue<SendRecord>> CreateRecord(SqlSugarClient Db, SiteAccount setting)
+        public static async Task<ReturnValue<SendRecord>> CreateRecord(SqlSugarClient Db, SiteAccount site)
         {
             var rv = new ReturnValue<SendRecord>();
-            if (setting == null)
+            if (site == null)
                 return rv;
 
+            logger.Info($"{site.Site}开始创建发文记录");
+
             // 没使用过的，最少使用量的关键词
-            var siteKeyword = Db.Queryable<SiteKeyword>().Where(o => o.SiteId == setting.Id).OrderBy(o => o.UseCount).First();
+            var siteKeyword = Db.Queryable<SiteKeyword>().OrderBy(o => o.UseCount).First();
 
             if (siteKeyword == null)
             {
-                rv.False("没有设置站点关键词");
+                rv.False("没有设置关键词");
                 return rv;
             }
 
@@ -66,8 +73,8 @@ namespace Work
             Interlocked.Increment(ref promptTempIdx);
             var promptTemp = promptTempList[promptTempIdx % promptTempList.Count];
 
-            // 站点链接
-            var urlList = Db.Queryable<SiteKeyword>().Where(o => o.SiteId == setting.Id)
+            // 站点链接，取同站链接或是同关键词链接
+            var urlList = Db.Queryable<SiteKeyword>().Where(o => o.Alias == siteKeyword.Alias || o.Keyword == siteKeyword.Keyword)
                 .Select(o => o.URL)
                 .OrderBy(o => SqlFunc.GetRandom()).Take(3).ToList();
 
@@ -96,21 +103,23 @@ namespace Work
                 TemplateId = promptTemp.Id,
                 TemplateName = promptTemp.Name,
                 IsSync = false,
-                SyncSiteId = setting.Id,
-                SyncSite = setting.Site,
+                SyncSiteId = site.Id,
+                SyncSite = site.Site,
                 SyncTime = null,
                 CreateTime = DateTime.Now,
                 ImgResourceId = image.Id,
                 ImgUrl = fullURL.ToString()
             };
-            var ret = Db.Insertable(sendRecord).ExecuteCommand();
-            rv.status = ret > 0;
+            var id = Db.Insertable(sendRecord).ExecuteReturnIdentity();
+            rv.status = id > 0;
             if (rv.status)
             {
+                sendRecord.Id = id;
                 rv.value = sendRecord;
                 await Db.Updateable<SiteKeyword>().SetColumns(o => o.UseCount == (o.UseCount + 1)).Where(o => o.Id == siteKeyword.Id).ExecuteCommandAsync();
                 await Db.Updateable<ImageResource>().SetColumns(o => o.UseCount == (o.UseCount + 1)).Where(o => o.Id == image.Id).ExecuteCommandAsync();
             }
+            logger.Info($"{site.Site}结束创建发文记录");
             return rv;
 
         }
@@ -231,6 +240,7 @@ namespace Work
 
         public static async Task<ReturnValue<string>> DoAI(SqlSugarClient Db, SendRecord sendRecord)
         {
+            logger.Info($"{sendRecord.SyncSite}开始生成文章");
             if (sendRecord == null)
                 return new ReturnValue<string> { errorsimple = "记录不存在" };
 
@@ -248,13 +258,15 @@ namespace Work
 
             // 组装指令
             var prompt = promptTemp.Prompt.Replace("{keyword}", sendRecord.Keyword);
-            prompt += $"\n需要在文章中选择合适的文字插入链接{sendRecord.Link}";
+            prompt += $"\n需要在文章选中包含{sendRecord.Keyword}的词语插入3个链接{sendRecord.Link}";
             if (!string.IsNullOrEmpty(sendRecord.ImgUrl))
             {
                 prompt += $"\n在文章的段落中插入图片{sendRecord.ImgUrl}";
             }
 
+            logger.Info($"{sendRecord.SyncSite}发送生成文章请求");
             var contentRes = await Volcengine.ChatCompletions(aiAccount.ApiKey, prompt);
+            logger.Info($"{sendRecord.SyncSite}生成文章请求响应了");
             if (!contentRes.status)
             {
                 string msg = contentRes.errordetailed ?? contentRes.errorsimple;
@@ -268,6 +280,7 @@ namespace Work
                             .Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
 
                 rv.False("生成文章出错" + msg);
+                logger.Info("生成文章出错" + msg);
                 return rv;
             }
             else
@@ -286,6 +299,7 @@ namespace Work
                 sendRecord.Prompt = prompt;
                 sendRecord.Title = title;
                 sendRecord.Content = body;
+                logger.Info($"{sendRecord.SyncSite}更新记录{sendRecord.Id}的文章");
                 // 更新文章
                 var ret = await Db.Updateable<SendRecord>()
                             .SetColumns(o => o.AiSiteId == aiAccount.Id)
@@ -354,6 +368,8 @@ namespace Work
                 return rv;
             }
 
+            logger.Info($"{sendRecord.SyncSite}开始同步文章到站点");
+
             // 没有获取JWT时，生成JWT
             if (string.IsNullOrEmpty(syncAccount.AccessKey))
             {
@@ -366,8 +382,10 @@ namespace Work
             }
 
             // 图片没有上传 TODO: 换个判定，wordpress路径 /uploads/
-            if (sendRecord.Content.Contains(sendRecord.ImgUrl))
+            //if (sendRecord.Content.Contains(sendRecord.ImgUrl))
+            if (string.IsNullOrEmpty(sendRecord.ImgUpload))
             {
+                logger.Info($"{sendRecord.SyncSite}没有同步图片到站点，先上传图片");
                 var upload = await UploadImg(Db, syncAccount, sendRecord);
                 if (upload.status == false)
                 {
@@ -403,6 +421,7 @@ namespace Work
             {
                 using (HttpClient client = new HttpClient())
                 {
+                    logger.Info($"{sendRecord.SyncSite}下载源图片{sendRecord.ImgUrl}");
                     try
                     {
                         // 发送 GET 请求并获取响应
@@ -422,6 +441,7 @@ namespace Work
 
                         // 读取响应内容并返回 byte[]
                         byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();
+                        logger.Info($"{sendRecord.SyncSite}下载原图片完毕，上传字节流");
                         uploadRes = await WordpressApi.UploadImage(syncAccount.Site, syncAccount.AccessKey, imageBytes, sendRecord.Keyword, filename);
                     }
                     catch (Exception ex)
@@ -435,9 +455,11 @@ namespace Work
 
             if (!uploadRes.status)
             {
+                logger.Info($"{sendRecord.SyncSite}上传失败");
                 // JWT 无效时，重新获取JWT
                 if (uploadRes.errorsimple.StartsWith("403|") || uploadRes.errorsimple.StartsWith("401|"))
                 {
+                    logger.Info($"{sendRecord.SyncSite}JWT无效/过期");
                     if (retry < 1)
                     {
                         var genRes = await GenAccessToken(Db, syncAccount, sendRecord);
@@ -464,7 +486,8 @@ namespace Work
                 if (!string.IsNullOrEmpty(sendRecord.Content) && sendRecord.Content.Contains(sendRecord.ImgUrl))
                 {
                     sendRecord.Content = sendRecord.Content.Replace(sendRecord.ImgUrl, uploadRes.value);
-                    await Db.Updateable<SendRecord>().SetColumns(o => o.Content == sendRecord.Content).Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
+                    logger.Info($"{sendRecord.SyncSite}上传图片成功，更新图片地址{uploadRes.value}");
+                    await Db.Updateable<SendRecord>().SetColumns(o => o.Content == sendRecord.Content).SetColumns(o => o.ImgUpload == uploadRes.value).Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
                 }
 
                 return rv;
@@ -533,12 +556,14 @@ namespace Work
         private static async Task<ReturnValue<string>> PublishArticle(SqlSugarClient Db, SiteAccount syncAccount, SendRecord sendRecord, int retry = 0)
         {
             var rv = new ReturnValue<string>();
+            logger.Info($"{sendRecord.SyncSite}发布文章中 {sendRecord.Title}");
             var sendRes = await WordpressApi.PostToCreate(syncAccount.Site, syncAccount.AccessKey, sendRecord.Title, sendRecord.Content);
             if (!sendRes.status)
             {
                 // JWT 无效时，重新获取JWT
-                if (sendRes.errorsimple.StartsWith("403|") || sendRes.errorsimple.StartsWith("401|"))
+                if (sendRes.errorsimple.StartsWith("401|"))
                 {
+                    logger.Info($"发布文章失败，再度获取WP站点{syncAccount.Site}的Token");
                     if (retry < 1)
                     {
                         var genRes = await GenAccessToken(Db, syncAccount, sendRecord);
@@ -561,6 +586,7 @@ namespace Work
             }
             else
             {
+                logger.Info($"{sendRecord.SyncSite}同步完成");
                 rv.status = await UpdateSyncResult(Db, sendRes.value, sendRecord.Id);
                 return rv;
             }
@@ -590,6 +616,7 @@ namespace Work
                 {
                     var jsonResult = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(sendRes);
                     syncUrl = jsonResult["link"];
+                    logger.Info(syncUrl);
                 }
                 catch (Exception ex)
                 {

@@ -37,6 +37,11 @@ namespace AIText.Controllers
         }
         public IActionResult Index()
         {
+            var siteAccount = Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true).ToList();
+            ViewData["Site"] = siteAccount;
+            var promptTemplate = Db.Queryable<PromptTemplate>().Where(o => o.IsEnable == true).ToList();
+            ViewData["Prompt"] = promptTemplate;
+
             return View();
         }
         public async Task<IActionResult> DoListAsync(SendRecordSearch search)
@@ -282,9 +287,29 @@ namespace AIText.Controllers
         private ISugarQueryable<SendRecord> SearchSql(SendRecordSearch search)
         {
             var query = Db.Queryable<SendRecord>();
-            if (!string.IsNullOrEmpty(search.Prompt))
+            if (!string.IsNullOrEmpty(search.SyncSiteId))
             {
-                query.Where(t => t.Prompt.Contains(search.Prompt));
+                query.Where(t => t.SyncSiteId == search.SyncSiteId);
+            }
+
+            if (!string.IsNullOrEmpty(search.TemplateId))
+            {
+                query.Where(t => t.TemplateId == search.TemplateId);
+            }
+
+            if (!string.IsNullOrEmpty(search.Title))
+            {
+                query.Where(t => t.Title.Contains(search.Title));
+            }
+
+            if (search.BeginTime.HasValue)
+            {
+                query.Where(t => t.CreateTime >= search.BeginTime);
+            }
+
+            if (search.EndTime.HasValue)
+            {
+                query.Where(t => t.CreateTime <= search.EndTime);
             }
 
             return query;

@@ -15,14 +15,14 @@ namespace Entitys
         /// 关键词
         /// </summary>
         public string Keyword { get; set; }
-        /// <summary>
-        /// 站点ID
-        /// </summary>
-        public string SiteId { get; set; }
-        /// <summary>
-        /// 域名
-        /// </summary>
-        public string Site { get; set; }
+        ///// <summary>
+        ///// 站点ID
+        ///// </summary>
+        //public string SiteId { get; set; }
+        ///// <summary>
+        ///// 域名
+        ///// </summary>
+        //public string Site { get; set; }
         /// <summary>
         /// 当前排名
         /// </summary>
@@ -71,5 +71,6 @@ namespace Entitys
         /// 更新时间
         /// </summary>
         public DateTime? UpdateTime { get; set; }
+        public string Alias { get; set; }
     }
 }

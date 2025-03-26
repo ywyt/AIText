@@ -8,9 +8,8 @@
         <table class="table table-vcenter card-table">
             <thead>
                 <tr>
-@*                     <th>ID</th> *@
+                    <th>域名，别名</th>
                     <th>关键词</th>
-                    <th>站点</th>
                     <th>当前排名</th>
                     <th>之前排名</th>
                     <th>搜索量</th>
@@ -26,15 +25,12 @@
             <tbody>
                 @foreach (var info in Model.List)
                 {
-                    <tr>
-@*                         <td class="text-muted">
-                            @info.Id
-                        </td> *@
+                    <tr data-id="@info.Id">
                         <td class="text-muted">
-                            @info.Keyword
+                            @info.Alias
                         </td>
                         <td class="text-muted">
-                            @info.Site
+                            @info.Keyword
                         </td>
                         <td class="text-muted">
                             @info.Position

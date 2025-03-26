@@ -1,9 +1,9 @@
 ﻿@{
-    var sites = ViewData["Site"] as List<Entitys.SiteAccount>;
+
 }
 <div class="row row-cards mt-3 card">
     <div class="card-header">
-        <h4><i class="card-title"></i> 导入站点关键词</h4>
+        <h4><i class="card-title"></i> 导入关键词</h4>
     </div>
 
     <div class="row">
@@ -13,7 +13,7 @@
 
                 <form id="prepareExcel" class="card" data-ajax="true" data-ajax-complete="previewComplete" data-ajax-update="#divlist" data-ajax-mode="replace" asp-action="ToImport" asp-controller="SiteKeyword" enctype="multipart/form-data" data-ajax-method="post">
                     <div class="row card-body">
-                        <div class="col-3">
+@*                         <div class="col-3">
                             <select name="selectSiteId" id="selectSiteId" class="form-control" required>
                                 <option value="">请选择站点</option>
                                 @if (sites?.Count > 0)
@@ -24,8 +24,11 @@
                                     }
                                 }
                             </select>
+                        </div> *@
+                        <div class="col-3">
+                            <input name="alias" placeholder="域名，别名" class="form-control" />
                         </div>
-                        <div class="col-9">
+                        <div class="col-6">
 
                             <input type="file" id="excelfile" name="excelfile" multiple class="form-control" required /> <br />
                         </div>

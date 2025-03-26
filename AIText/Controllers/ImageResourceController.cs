@@ -60,6 +60,10 @@ namespace AIText.Controllers
             {
                 query.Where(t => t.Color == search.Color);
             }
+            if (search.UseCount.HasValue)
+            {
+                query.Where(t => t.UseCount >= search.UseCount);
+            }
 
             return query;
         }

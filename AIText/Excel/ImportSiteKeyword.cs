@@ -44,5 +44,7 @@ namespace commons.import
         public string ErrMsg { get; set; }
         public int Idx { get; set; }
         #endregion
+
+        public string Alias { get; set; }
     }
 }

@@ -80,14 +80,19 @@ namespace QuartzTask
                     await Task.Delay(1000);
                 }
 
-                // 计算执行时间点（动态计算）
-                List<int> executionHours = CalculateExecutionHours(item.CountPerDay);
                 // 判断当前小时是否在执行时间列表中
-                if (!executionHours.Contains(DateTime.Now.Hour))
+                if (!string.IsNullOrEmpty(item.Hours) && !($",{item.Hours},").Contains($",{DateTime.Now.Hour},"))
                 {
-                    logger.Info($"{item.Site}不在执行时间范围内");
+                    logger.Info($"{item.Site}不在执行时间范围{item.Hours}内");
                     continue;
                 }
+
+                if (sendRecords.Any(o => o.CreateTime.Hour == DateTime.Now.Hour))
+                {
+                    logger.Info($"{item.Site}当前小时已存在任务");
+                    continue;
+                }
+
                 // 创建新的，当前循环应该执行的
                 var record = await InvokeApi.CreateRecord(Db, item);
                 if (record.status && record.value != null)
@@ -102,26 +107,39 @@ namespace QuartzTask
                 // 等待以免API调用间隔过短
                 await Task.Delay(1000);
             }
-
+            int semaNum = 0;
+            while (true)
+            {
+                logger.Debug($"等待信号量释放， 等待任务结束{semaNum}/{MAX_API_COUNT}");
+                await semaphore.WaitAsync();
+                semaNum++;
+                // 等待信号量释放完毕
+                if (semaNum == MAX_API_COUNT)
+                {
+                    semaphore.Release(MAX_API_COUNT);
+                    break;
+                }
+                await Task.Delay(1000);
+            }
             logger.Info($"任务结束执行时间: {DateTime.Now}");
             isRunning = false;
             await Task.CompletedTask;
         }
 
-        // 计算每天要执行的小时数（动态计算方法）
-        private static List<int> CalculateExecutionHours(int count)
-        {
-            List<int> hours = new List<int>();
-            double interval = 24.0 / count; // 计算间隔时间
+        //// 计算每天要执行的小时数（动态计算方法）
+        //private static List<int> CalculateExecutionHours(int count)
+        //{
+        //    List<int> hours = new List<int>();
+        //    double interval = 24.0 / count; // 计算间隔时间
 
-            for (int i = 0; i < count; i++)
-            {
-                int hour = (int)Math.Round(i * interval) % 24; // 确保小时数在 0-23 之间
-                hours.Add(hour);
-            }
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        int hour = (int)Math.Round(i * interval) % 24; // 确保小时数在 0-23 之间
+        //        hours.Add(hour);
+        //    }
 
-            return hours;
-        }
+        //    return hours;
+        //}
 
         /// <summary>
         /// 处理发送

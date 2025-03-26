@@ -12,6 +12,7 @@
                     <th>颜色</th>
                     <th>图片路径</th>
                     <th>使用次数</th>
+                    <th>创建时间</th>
                     <th class="w-1"></th>
                 </tr>
             </thead>
@@ -43,13 +44,16 @@
                             @image.ImagePath
                         </td>
                         <td class="text-muted">
+                            @image.UseCount
+                        </td>
+                        <td class="text-muted">
                             @image.CreateTime
                         </td>
 
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">
                                 <a href="@fullURL" target="_blank" class="btn btn-white">
-                                    查看
+                                    查看图片
                                 </a>
                                 <a data-confirm="/ImageResource/DoDelete?Id=@image.Id" title="是否删除" class="btn btn-danger">
                                     删除

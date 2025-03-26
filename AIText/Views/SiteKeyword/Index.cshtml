@@ -6,16 +6,16 @@
     <div class="row align-items-center mb-2">
         <div class="col">
             <h2 class="page-title">
-                站点关键词管理
+                关键词管理
             </h2>
         </div>
         <div class="col-auto ms-auto d-print-none">
             <div class="btn-list">
-@*                 <a data-src="/SiteKeyword/Add" title="创建站点关键词" class="btn btn-primary">
+@*                 <a data-src="/SiteKeyword/Add" title="创建关键词" class="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     添加
                 </a> *@
-                <a href="/SiteKeyword/Import" title="导入站点关键词" class="btn btn-primary d-none d-sm-inline-block">
+                <a href="/SiteKeyword/Import" title="导入关键词" class="btn btn-primary d-none d-sm-inline-block">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-database-import" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                         <path d="M12 6m-8 0a8 3 0 1 0 16 0a8 3 0 1 0 -16 0"></path>
@@ -24,7 +24,7 @@
                     </svg>
                     导入
                 </a>
-                <a onclick="DoExport()" title="导出站点关键词" class="btn btn-primary d-none d-sm-inline-block">
+                <a onclick="DoExport()" title="导出关键词" class="btn btn-primary d-none d-sm-inline-block">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-export" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                         <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
@@ -51,22 +51,22 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-2">
-                        <div class="subheader mb-2 mt-2">网站</div>
-                        <select name="SiteId" id="SiteId" class="form-control">
-                            <option value="">请选择站点</option>
-                            @if (sites?.Count > 0)
-                            {
-                                @foreach (var item in sites)
-                                {
-                                    <option value="@item.Id">@item.Site</option>
-                                }
-                            }
-                        </select>
+                        <input type="hidden" asp-for="Id" class="form-control" placeholder="" autocomplete="off">
+                        <div class="subheader mb-2 mt-2">域名，别名</div>
+                        <div>
+                            <input type="text" asp-for="Alias" class="form-control" placeholder="" autocomplete="off">
+                        </div>
                     </div>
                     <div class="col-2">
                         <div class="subheader mb-2 mt-2">关键词</div>
                         <div>
-                            <input type="text" name="Keyword" class="form-control" placeholder="" autocomplete="off">
+                            <input type="text" asp-for="Keyword" class="form-control" placeholder="" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div class="subheader mb-2 mt-2">使用次数</div>
+                        <div>
+                            <input type="number" asp-for="UseCount" class="form-control" placeholder="" autocomplete="off">
                         </div>
                     </div>
                     <div class="col-2">

@@ -17,7 +17,7 @@
             </div>
             <div class="col-1 mb-3">
                 <label class="form-check">
-                    <input class="form-check-input" type="checkbox" asp-for="IsSync">
+                    <input class="form-check-input" type="checkbox" asp-for="IsSync" readonly onclick="return false;" />
                     <span class="form-check-label">是否同步</span>
                 </label>
             </div>
@@ -40,7 +40,10 @@
             <div class="col-6 mb-3">
                 <label class="form-label">关键词</label>
                 @Html.HiddenFor(obj => obj.KeywordId)
-                <input asp-for="Keyword" class="bg-focus form-control parsley-validated" readonly />
+                <div class="input-group">
+                    <input asp-for="Keyword" class="bg-focus form-control parsley-validated" readonly />
+                    <a class="input-group-text @(string.IsNullOrEmpty(Model.KeywordId) ? "invisible": "")" href="@Url.Action("Index", "SiteKeyword")?Id=@Model.KeywordId" target="_blank"> 查看 </a>
+                </div>
                 <span asp-validation-for="Keyword" class="text-danger"> </span>
             </div>
             <div class="col-6 mb-3">
@@ -89,11 +92,16 @@
                 <span asp-validation-for="AiTime" class="text-danger"> </span>
             </div>
             <div class="col-6 mb-3">
-                <label class="form-label">生成图片</label>
+                <label class="form-label">图片</label>
                 <input asp-for="ImgUrl" class="bg-focus form-control parsley-validated" readonly />
                 <span asp-validation-for="ImgUrl" class="text-danger"> </span>
             </div>
             <div class="col-6 mb-3">
+                <label class="form-label">上传后的图片</label>
+                <input asp-for="ImgUpload" class="bg-focus form-control parsley-validated" readonly />
+                <span asp-validation-for="ImgUpload" class="text-danger"> </span>
+            </div>
+@*             <div class="col-6 mb-3">
                 <label class="form-label">图片本地路径</label>
                 <input asp-for="ImgPath" class="bg-focus form-control parsley-validated" readonly />
                 <span asp-validation-for="ImgPath" class="text-danger"> </span>
@@ -103,7 +111,7 @@
                 @Html.HiddenFor(obj => obj.ImgErrMsg)
                 <input asp-for="ImgTime" class="bg-focus form-control parsley-validated" readonly />
                 <span asp-validation-for="ImgTime" class="text-danger"> </span>
-            </div>
+            </div> *@
             <div class="col-6 mb-3">
                 <label class="form-label">创建时间</label>
                 <input asp-for="CreateTime" class="bg-focus form-control parsley-validated" readonly />

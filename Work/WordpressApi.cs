@@ -55,12 +55,15 @@ namespace Work
             return rv;
         }
 
-        public static async Task<ReturnValue<string>> PostToCreate(string site, string accesskey, string title, string content) 
+        public static async Task<ReturnValue<string>> PostToCreate(string site, string accesskey, string title, string content, int retry = 0) 
         {
             ReturnValue<string> rv = new ReturnValue<string>();
             var options = new RestClientOptions(site);
             var client = new RestClient(options);
-            var request = new RestRequest("/wp-json/wp/v2/posts", Method.Post);
+            string path = "/wp-json/wp/v2/posts";
+            if (retry > 0)
+                path = "/index.php/wp-json/wp/v2/posts";
+            var request = new RestRequest(path, Method.Post);
             request.AddHeader("Content-Type", "application/json");
             request.AddHeader("Authorization", $"Bearer {accesskey}");
             var body = new 
@@ -77,6 +80,11 @@ namespace Work
             }
             else
             {
+                if (retry < 1)
+                {
+                    logger.Info($"{site}同步失败，再次尝试");
+                    return await PostToCreate(site, accesskey, title, content, ++retry);
+                }
                 string msg = response.StatusCode.ObjToInt() + "|" + response.ErrorMessage + response.Content;
                 logger.Info(msg);
                 rv.False(msg);
@@ -129,12 +137,15 @@ namespace Work
             return rv;
         }
 
-        public static async Task<ReturnValue<string>> UploadImage(string site, string accesskey, byte[] imageBytes, string keyword, string filename = null)
+        public static async Task<ReturnValue<string>> UploadImage(string site, string accesskey, byte[] imageBytes, string keyword, string filename = null, int retry = 0)
         {
             ReturnValue<string> rv = new ReturnValue<string>();
             var options = new RestClientOptions(site);
             var client = new RestClient(options);
-            var request = new RestRequest("/wp-json/wp/v2/media", Method.Post);
+            string path = "/wp-json/wp/v2/media";
+            if (retry > 0)
+                path = "/index.php/wp-json/wp/v2/media";
+            var request = new RestRequest(path, Method.Post);
             request.AddHeader("Authorization", $"Bearer {accesskey}");
             request.AlwaysMultipartFormData = true;
             request.AddFile("file", bytes: imageBytes, filename ?? (keyword + ".jpg"), contentType: ContentType.Binary);
@@ -167,6 +178,10 @@ namespace Work
             }
             else
             {
+                if (retry < 1)
+                {
+                    return await UploadImage(site, accesskey, imageBytes, keyword, filename, ++retry);
+                }
                 string msg = response.ErrorMessage + response.Content;
                 logger.Info(msg);
                 rv.False(msg);

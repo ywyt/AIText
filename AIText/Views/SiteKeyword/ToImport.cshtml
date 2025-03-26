@@ -1,6 +1,6 @@
 ﻿@model List<commons.import.ImportSiteKeywordDto>
 @{
-    var site = ViewData["SelectedSite"] as Entitys.SiteAccount;
+    // var site = ViewData["SelectedSite"] as Entitys.SiteAccount;
 }
 
 @if (Model.Count != 0)
@@ -36,8 +36,9 @@
                             @info.Id
                         </td> *@
                         <td class="text-muted">
-                            <input type="hidden" name="[@loopi].SiteId" value="@site.Id" />
-                            <input type="hidden" name="[@loopi].Site" value="@site.Site" />
+@*                             <input type="hidden" name="[@loopi].SiteId" value="@site.Id" />
+                            <input type="hidden" name="[@loopi].Site" value="@site.Site" /> *@
+                            <input type="hidden" name="[@loopi].Alias" value="@info.Alias" />
                             <input type="hidden" name="[@loopi].Keyword" value="@info.Keyword" />
                             @info.Keyword
                         </td>

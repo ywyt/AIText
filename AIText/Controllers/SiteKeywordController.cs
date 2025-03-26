@@ -22,11 +22,11 @@ namespace AIText.Controllers
         {
             Db = _Db;
         }
-        public IActionResult Index()
+        public IActionResult Index(SiteKeywordSearch search)
         {
             var siteAccount = Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true).ToList();
             ViewData["Site"] = siteAccount;
-            return View();
+            return View(search);
         }
         public async Task<IActionResult> DoListAsync(SiteKeywordSearch search)
         {
@@ -100,13 +100,21 @@ namespace AIText.Controllers
         private ISugarQueryable<SiteKeyword> SearchSql(SiteKeywordSearch search)
         {
             var query = Db.Queryable<SiteKeyword>();
-            if (!string.IsNullOrEmpty(search.SiteId))
+            if (!string.IsNullOrEmpty(search.Id))
             {
-                query.Where(t => t.SiteId  == search.SiteId);
+                query.Where(t => t.Id == search.Id);
+            }
+            if (!string.IsNullOrEmpty(search.Alias))
+            {
+                query.Where(t => t.Alias == search.Alias);
             }
             if (!string.IsNullOrEmpty(search.Keyword))
             {
                 query.Where(t => t.Keyword.Contains(search.Keyword));
+            }
+            if (search.UseCount.HasValue)
+            {
+                query.Where(t => t.UseCount >= search.UseCount);
             }
 
             return query;
@@ -114,23 +122,21 @@ namespace AIText.Controllers
 
         public IActionResult Import()
         {
-            var siteAccount = Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true).ToList();
-            ViewData["Site"] = siteAccount;
             return View();
         }
 
         [HttpPost]
         // accept request bodies up to 280,000,000 bytes.
         [RequestSizeLimit(280_000_000)]
-        public async Task<IActionResult> ToImportAsync(IFormFile excelfile, string selectSiteId)
+        public async Task<IActionResult> ToImportAsync(IFormFile excelfile, string selectSiteId, string alias)
         {
-            // 必须选中站点
-            if (string.IsNullOrEmpty(selectSiteId))
-                return PartialView(new List<commons.import.ImportSiteKeywordDto>());
+            //// 必须选中站点
+            //if (string.IsNullOrEmpty(selectSiteId))
+            //    return PartialView(new List<commons.import.ImportSiteKeywordDto>());
 
-            var site = Db.Queryable<SiteAccount>().Where(o => o.Id == selectSiteId).First();
+            //var site = Db.Queryable<SiteAccount>().Where(o => o.Id == selectSiteId).First();
 
-            ViewData["SelectedSite"] = site;
+            //ViewData["SelectedSite"] = site;
 
             if (excelfile == null)
                 return PartialView(new List<commons.import.ImportSiteKeywordDto>());
@@ -145,7 +151,7 @@ namespace AIText.Controllers
             {
                 loopi++;
 
-
+                item.Alias = alias;
                 item.Idx = loopi;
 
             }
@@ -181,8 +187,8 @@ namespace AIText.Controllers
                     {
                         Id = Guid.NewGuid().ToString(),
                         Keyword = item.Keyword,
-                        SiteId = item.SiteId,
-                        Site = item.Site,
+                        //SiteId = item.SiteId,
+                        //Site = item.Site,
                         Position = item.Position,
                         PreviousPosition = item.PreviousPosition,
                         SearchVolume = item.SearchVolume,
@@ -193,7 +199,8 @@ namespace AIText.Controllers
                         TrafficPercent = item.TrafficPercent,
                         TrafficCost = item.TrafficCost,
                         CreateTime = DateTime.Now,
-                        UpdateTime = null
+                        UpdateTime = null,
+                        Alias = item.Alias,
                     });
                 }
                 else
@@ -206,8 +213,8 @@ namespace AIText.Controllers
                         continue;
                     }
                     model.Keyword = item.Keyword;
-                    model.SiteId = item.SiteId;
-                    model.Site = item.Site;
+                    //model.SiteId = item.SiteId;
+                    //model.Site = item.Site;
                     model.Position = item.Position;
                     model.PreviousPosition = item.PreviousPosition;
                     model.SearchVolume = item.SearchVolume;

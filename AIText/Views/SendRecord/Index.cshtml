@@ -1,4 +1,8 @@
 ﻿@model AIText.Models.SendRecord.SendRecordSearch
+@{
+    var sites = ViewData["Site"] as List<Entitys.SiteAccount>;
+    var prompts = ViewData["Prompt"] as List<Entitys.PromptTemplate>;
+}
 <div class="page-header d-print-none ">
     <div class="row align-items-center mb-2">
         <div class="col">
@@ -31,9 +35,49 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-2">
-                        <div class="subheader mb-2 mt-2">提示词</div>
+                        <div class="subheader mb-2 mt-2">站点</div>
+                        <select asp-for="SyncSiteId" class="form-control">
+                            <option value="">请选择站点</option>
+                            @if (sites?.Count > 0)
+                            {
+                                @foreach (var item in sites)
+                                {
+                                    <option value="@item.Id">@item.Site</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-2">
+                        <div class="subheader mb-2 mt-2">指令</div>
                         <div>
-                            <input type="text" name="Prompt" class="form-control" placeholder="" autocomplete="off">
+                            <select asp-for="TemplateId" class="form-control">
+                                <option value="">请选择指令</option>
+                                @if (prompts?.Count > 0)
+                                {
+                                    @foreach (var item in prompts)
+                                    {
+                                        <option value="@item.Id">@item.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div class="subheader mb-2 mt-2">标题</div>
+                        <div>
+                            <input type="text" asp-for="Title" class="form-control" placeholder="" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div class="subheader mb-2 mt-2">时间</div>
+                        <div>
+                            <input asp-for="BeginTime" class="form-control" placeholder="" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div class="subheader mb-2 mt-2 invisible">时间</div>
+                        <div>
+                            <input asp-for="BeginTime" class="form-control" placeholder="" autocomplete="off">
                         </div>
                     </div>
                     <div class="col-2">

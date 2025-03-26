@@ -12,7 +12,6 @@
                     <th>关键词</th>
                     <th>标题</th>
                     <th>图片</th>
-                    <th>图片生成时间</th>
                     <th>文章生成时间</th>
                     <th>同步站点</th>
                     <th>是否同步</th>
@@ -38,9 +37,6 @@
                             {
                                 <img src="@(string.IsNullOrEmpty(info.ImgPath) ? info.ImgUrl : info.ImgPath)" height="100" />
                             }
-                        </td>
-                        <td class="text-muted">
-                            @info.ImgTime
                         </td>
                         <td class="text-muted">
                             @info.AiTime

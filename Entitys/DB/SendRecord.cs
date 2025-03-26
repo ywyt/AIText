@@ -30,6 +30,7 @@ namespace Entitys
         public DateTime? AiTime { get; set; }
         public string ImgResourceId { get; set; }
         public string ImgUrl { get; set; }
+        public string ImgUpload { get; set; }
         public string ImgPath { get; set; }
         public DateTime? ImgTime { get; set; }
         public string ImgErrMsg { get; set; }

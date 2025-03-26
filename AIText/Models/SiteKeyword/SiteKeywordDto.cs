@@ -12,14 +12,14 @@ namespace AIText.Models.SiteKeyword
         /// 关键词
         /// </summary>
         public string Keyword { get; set; }
-        /// <summary>
-        /// 站点ID
-        /// </summary>
-        public string SiteId { get; set; }
+        ///// <summary>
+        ///// 站点ID
+        ///// </summary>
+        //public string SiteId { get; set; }
         /// <summary>
         /// 域名
         /// </summary>
-        public string Site { get; set; }
+        public string Alias { get; set; }
         /// <summary>
         /// 当前排名
         /// </summary>

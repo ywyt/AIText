@@ -69,6 +69,7 @@
                 </div>
                 <div class="col-6 mb-3 enable-send invisible">
                     <label class="form-label">每天创建的文章数</label>
+                    <input asp-for="Hours" type="hidden"class="bg-focus form-control parsley-validated" />
                     <input asp-for="CountPerDay" type="number" min="1" max="24" class="bg-focus form-control parsley-validated" />
                     <span asp-validation-for="CountPerDay" class="text-danger"> </span>
                 </div>
