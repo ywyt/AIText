@@ -26,6 +26,10 @@ namespace Entitys
         public string Prompt { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
+        /// <summary>
+        /// 文章评分
+        /// </summary>
+        public string Score { get; set; }
         public string ErrMsg { get; set; }
         public DateTime? AiTime { get; set; }
         public string ImgResourceId { get; set; }

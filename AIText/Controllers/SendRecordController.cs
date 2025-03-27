@@ -312,6 +312,8 @@ namespace AIText.Controllers
                 query.Where(t => t.CreateTime <= search.EndTime);
             }
 
+            query.OrderBy(t => t.CreateTime);
+
             return query;
         }
     }

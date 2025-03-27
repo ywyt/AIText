@@ -72,13 +72,18 @@
                 </div>
                 @if (!string.IsNullOrEmpty(Model.SyncUrl))
                 {
-                    <div class="col-3 mb-3">
+                    <div class="col-1 mb-3">
                         <label class="form-label invisible">查看</label>
                         <a href="@Model.SyncUrl" class="btn btn-primary" target="_blank">
                             查看
                         </a>
                     </div>
                 }
+                <div class="col-4 mb-3">
+                    <label class="form-label">评分</label>
+                    <input asp-for="Score" class="bg-focus form-control parsley-validated" readonly />
+                    <span asp-validation-for="Score" class="text-danger"> </span>
+                </div>
             }
             <div class="col-12 mb-3">
                 <label class="form-label">文章内容</label>

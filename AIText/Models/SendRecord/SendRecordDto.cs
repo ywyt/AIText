@@ -13,7 +13,8 @@ namespace AIText.Models.SendRecord
         public string TemplateId { get; set; }
         public string TemplateName { get; set; }
         public string Title { get; set; }
-        public string Content { get; set; }
+        //public string Content { get; set; }
+        public string Score { get; set; }
         public DateTime? AiTime { get; set; }
         public string ImgUrl { get; set; }
         public string ImgPath { get; set; }

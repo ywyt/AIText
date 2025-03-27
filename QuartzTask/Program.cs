@@ -33,7 +33,7 @@ namespace QuartzTask
             // 4. 创建一个触发器 (基于 Cron 表达式)
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity("myTrigger", "group1") // 触发器名称和分组
-                .WithCronSchedule("0 14 0/1 * * ?") // 每小时的第 15 分钟触发一次
+                .WithCronSchedule("0 0 0/1 * * ?") // 每小时的第 15 分钟触发一次
                 .Build();
 
             // 5. 将任务和触发器加入调度器

@@ -12,7 +12,8 @@
                     <th>关键词</th>
                     <th>标题</th>
                     <th>图片</th>
-                    <th>文章生成时间</th>
+                    <th>评分</th>
+                    <th>记录创建时间<br />文章生成时间 <br />发布文章时间</th>
                     <th>同步站点</th>
                     <th>是否同步</th>
 
@@ -29,7 +30,7 @@
                         <td class="text-muted">
                             @info.Keyword
                         </td>
-                        <td class="text-muted">
+                        <td class="text-wrap w-25">
                             @info.Title
                         </td>
                         <td class="text-muted">
@@ -39,7 +40,12 @@
                             }
                         </td>
                         <td class="text-muted">
-                            @info.AiTime
+                            @info.Score
+                        </td>
+                        <td class="text-muted">
+                            @info.CreateTime <br/>
+                            @(info.AiTime?.ToString() ?? "-") <br />
+                            @(info.SyncTime?.ToString() ?? "-")
                         </td>
                         <td class="text-muted">
                             @info.SyncSite
@@ -50,13 +56,13 @@
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">
                                 <!--没有图片且未生成文章时，可调用图-->
-                                @if (string.IsNullOrEmpty(info.ImgUrl) && string.IsNullOrEmpty(info.Content))
+                                @if (string.IsNullOrEmpty(info.ImgUrl) && string.IsNullOrEmpty(info.Title))
                                 {
                                     <a data-confirm="@Url.Content("/SendRecord/DoDraw?Id=" + info.Id)" title="是否抽取图片" class="btn bg-yellow">
                                         抽图
                                     </a>
                                 }
-                                @if (string.IsNullOrEmpty(info.Content))
+                                @if (string.IsNullOrEmpty(info.Title))
                                 {
                                     <a data-confirm="@Url.Content("/SendRecord/DoAI?Id=" + info.Id)" title="生成文章" class="btn btn-cyan">
                                         生成文章
@@ -67,7 +73,7 @@
                                     if (info.IsSync == false)
                                     {
                                         <a data-confirm="@Url.Content("/SendRecord/DoSync?Id=" + info.Id)" title="发布到站点" class="btn btn-green">
-                                            同步
+                                            发布文章
                                         </a>
                                         <a href="@Url.Content("/SendRecord/Preview?Id=" + info.Id)" class="btn btn-secondary" target="_blank">
                                             文章预览

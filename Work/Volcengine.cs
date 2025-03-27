@@ -45,13 +45,7 @@ namespace Work
                     // 提取content字段
                     string content = jsonResponse["choices"][0]["message"]["content"];
 
-                    // 去除转义字符
-                    content = System.Text.RegularExpressions.Regex.Unescape(content);
-
-                    // 将Markdown转换为HTML
-                    string htmlContent = Markdown.ToHtml(content);
-
-                    rv.True(htmlContent);
+                    rv.True(content);
                 }
                 catch (Exception ex) 
                 {
@@ -67,6 +61,18 @@ namespace Work
                 logger.Info(msg);   
             }
             return rv;
+        }
+
+
+        public static string MD2Html(string content)
+        {
+            // 去除转义字符
+            content = System.Text.RegularExpressions.Regex.Unescape(content);
+
+            // 将Markdown转换为HTML
+            string htmlContent = Markdown.ToHtml(content);
+
+            return htmlContent;
         }
     }
 }

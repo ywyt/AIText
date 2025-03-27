@@ -246,7 +246,7 @@ namespace Work
 
             var rv = new ReturnValue<string>();
 
-            if (!string.IsNullOrEmpty(sendRecord.Content))
+            if (!string.IsNullOrEmpty(sendRecord.Content) && !string.IsNullOrEmpty(sendRecord.Title))
             {
                 rv.False("文章已经生成");
                 return rv;
@@ -285,8 +285,31 @@ namespace Work
             }
             else
             {
+                sendRecord.Content = contentRes.value;
+                var valiRes = await ValideText(aiAccount, sendRecord);
+                if (!valiRes.status)
+                {
+                    string msg = valiRes.errordetailed ?? valiRes.errorsimple;
+                    // 更新文章
+                    var ret2 = await Db.Updateable<SendRecord>()
+                                .SetColumns(o => o.AiSiteId == aiAccount.Id)
+                                .SetColumns(o => o.AiSite == aiAccount.Site)
+                                .SetColumns(o => o.Prompt == prompt)
+                                .SetColumns(o => o.Content == sendRecord.Content)
+                                .SetColumns(o => o.Score == sendRecord.Score)
+                                .SetColumns(o => o.ErrMsg == msg)
+                                .SetColumns(o => o.AiTime == DateTime.Now)
+                                .Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
+                    rv.False("生成文章过不了验证" + msg);
+                    logger.Info("生成文章过不了验证" + msg);
+                    return rv;
+                }
+
+                // 将markdown语法转换为Html
+                sendRecord.Content = Volcengine.MD2Html(sendRecord.Content);
+
                 // 从文章中提取标题
-                (string title, string body) = ExtractTitleAndBody(contentRes.value);
+                (string title, string body) = ExtractTitleAndBody(sendRecord.Content);
 
                 if (!string.IsNullOrEmpty(sendRecord.ImgPath))
                 {
@@ -307,6 +330,7 @@ namespace Work
                             .SetColumns(o => o.Prompt == prompt)
                             .SetColumns(o => o.Title == title)
                             .SetColumns(o => o.Content == body)
+                            .SetColumns(o => o.Score == sendRecord.Score)
                             .SetColumns(o => o.AiTime == DateTime.Now)
                             .Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
                 rv.status = ret > 0;
@@ -314,6 +338,144 @@ namespace Work
             }
         }
 
+
+        private static async Task<ReturnValue<string>> ValideText(AiAccount aiAccount, SendRecord sendRecord, int retry = 0)
+        {
+            logger.Info($"{sendRecord.SyncSite}对文章进行{retry+1}次评分");
+            string prompt = $"请检测下面文章是否正确采用德语并打分，满分10分，从原创性、可读性、用户价值、语法语言风格等。超过7.5分，则直接返回当前评分，不需要分析。如果文章评分低于7.5分，需要按照你评分标准继续修改该文章，直接返回修改的文章（保留图片和链接）；无法修改则直接返回评分，不需要分析：\n{sendRecord.Content}";
+            var valRes = await Volcengine.ChatCompletions(aiAccount.ApiKey, prompt);
+            if (valRes.status)
+            {
+                if (valRes.value?.Length < 50)
+                {
+                    logger.Debug($"{sendRecord.SyncSite}评分：{valRes.value}");
+
+                    if (ExtractScore(valRes.value) >= 7.5)
+                    {
+                        return new ReturnValue<string>() { status = true };
+                    }
+                    if (retry < 5)
+                    {
+                        return await ValideText(aiAccount, sendRecord, ++retry);
+                    }
+                    return new ReturnValue<string>() { status = false, errorsimple = "评分不合格" };
+                }
+                else
+                {
+                    if (retry < 5)
+                    {
+                        if (valRes.value?.Length > 50)
+                        {
+                            (double? score, string content) = FilterDeContent(valRes.value);
+                            // 当前评分
+                            if (score.HasValue)
+                                sendRecord.Score = score.ToString();
+
+                            // 它有修改文章， 过短的是评语，还可能是德语的评语，不进行修改
+                            if (!string.IsNullOrEmpty(content) && content.Length > 500)
+                                sendRecord.Content = content;
+                            else
+                            {
+                                // 否则返回的可能是评语
+                                logger.Debug($"{sendRecord.SyncSite} 第{retry + 1}次验证文章{valRes.value}");
+                            }
+
+                            if (score >= 7.5)
+                            {
+                                return new ReturnValue<string>() { status = true, errorsimple = "评分合格" };
+                            }
+                        }
+                        return await ValideText(aiAccount, sendRecord, ++retry);
+                    }
+                    else
+                    {
+                        return new ReturnValue<string>() { status = false, errorsimple = "评分不合格" };
+                    }
+                }
+            }
+            else
+            {
+                logger.Info($"{sendRecord.SyncSite}对文章进行评分出错了");
+                if (retry < 3)
+                    return await ValideText(aiAccount, sendRecord, ++retry);
+                return valRes;
+            }
+        }
+
+        /// <summary>
+        /// 过滤内容，返回德语文章和评分
+        /// </summary>
+        /// <param name="markdownText"></param>
+        /// <returns></returns>
+        private static (double?, string) FilterDeContent(string markdownText)
+        {
+            double? score = null;
+            // 保留原文中的所有空行（通过换行符分段）
+            var paragraphs = markdownText.Split(new[] { "\n" }, StringSplitOptions.None);
+
+            // 正则表达式匹配中文字符
+            Regex chineseRegex = new Regex("[\u4e00-\u9fff]");
+            // 正则匹配仅由数字和符号 `+-*/` 组成的段落（允许"评分"两个字，且其他中文会跳过）
+            Regex numberSymbolRegex = new Regex(@"^([\d\s+\-*/.:：评分]+)$");
+
+            StringBuilder resultMarkdown = new StringBuilder(); // 用于存储过滤后的 Markdown 文本
+
+            bool isDe = false;
+            foreach (var paragraph in paragraphs)
+            {
+                if (!isDe) // 如果已经找到符合条件的段落，则跳出循环
+                {
+                    if (string.IsNullOrWhiteSpace(paragraph)) continue;
+
+                    // 如果段落仅由数字和符号 `+-*/` 和冒号 `:` 或 `：` 组成（且不包含"评分"），则跳过
+                    if (numberSymbolRegex.IsMatch(paragraph))
+                    {
+                        score = ExtractScore(paragraph);
+                        continue;
+                    }
+
+                    // 如果段落包含中文，则跳过
+                    if (chineseRegex.IsMatch(paragraph))
+                    {
+                        continue;
+                    }
+                }
+                if (!isDe)
+                    isDe = true;
+
+                // 将符合条件的段落追加到结果中，并保持段落间空行
+                resultMarkdown.AppendLine(paragraph);
+                //resultMarkdown.AppendLine(); // 保持 Markdown 格式的段落间空行
+            }
+
+            // 输出过滤后的 Markdown 文本
+            string filteredMarkdown = resultMarkdown.ToString(); // 去除首尾空白
+            return (score, filteredMarkdown);
+        }
+
+        public static double? ExtractScore(string input)
+        {
+            // 匹配评分数字，允许小数和整数，以及可能的“/10”或“分”后缀
+            Regex regex = new Regex(@"(\d+(\.\d+)?)"); // 捕获数字部分
+
+            Match match = regex.Match(input);
+
+            if (match.Success)
+            {
+                if (double.TryParse(match.Groups[1].Value, out double score))
+                {
+                    return score;
+                }
+            }
+
+            return null; // 如果没有匹配到，返回null
+        }
+
+        /// <summary>
+        /// 从html中提取标题和正文
+        /// </summary>
+        /// <param name="content"></param>
+        /// <returns></returns>
         private static (string title, string body) ExtractTitleAndBody(string content)
         {
             // 正则匹配 <h1>、<h2>、<h3> 中的第一个
