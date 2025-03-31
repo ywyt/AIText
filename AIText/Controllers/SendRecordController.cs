@@ -42,7 +42,8 @@ namespace AIText.Controllers
             var promptTemplate = Db.Queryable<PromptTemplate>().Where(o => o.IsEnable == true).ToList();
             ViewData["Prompt"] = promptTemplate;
 
-            return View();
+            var search = new SendRecordSearch { BeginTime = DateTime.Now.Date };
+            return View(search);
         }
         public async Task<IActionResult> DoListAsync(SendRecordSearch search)
         {
@@ -59,6 +60,14 @@ namespace AIText.Controllers
             };
             return PartialView(pageList);
         }
+
+        public IActionResult ViewAiRecord(int Id)
+        {
+            var list = Db.Queryable<AiRecord>().Where(t => t.SendRecordId == Id).ToList();
+            return View(list);
+        }
+
+
         public IActionResult Add()
         {
             var setting = Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true && o.StartDate <= DateTime.Now).ToList();
@@ -229,7 +238,6 @@ namespace AIText.Controllers
             rv.status = ret > 0;
             return Json(rv);
         }
-
 
         static (string title, string body) ExtractTitleAndBody(string content)
         {

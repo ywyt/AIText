@@ -10,6 +10,7 @@ namespace AIText.Models.SiteAccount
         public System.String Password { get; set; }
         public DateTime? StartDate { get; set; }
         public int CountPerDay { get; set; }
+        public string Hours { get; set; }
         public bool? IsEnable { get; set; }
         public DateTime? CreateTime { get; set; }
         public DateTime? UpdateTime { get; set; }

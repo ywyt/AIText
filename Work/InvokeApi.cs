@@ -266,6 +266,7 @@ namespace Work
 
             logger.Info($"{sendRecord.SyncSite}发送生成文章请求");
             var contentRes = await Volcengine.ChatCompletions(aiAccount.ApiKey, prompt);
+            await RecordAiRequest(Db, sendRecord, contentRes, prompt);
             logger.Info($"{sendRecord.SyncSite}生成文章请求响应了");
             if (!contentRes.status)
             {
@@ -286,7 +287,8 @@ namespace Work
             else
             {
                 sendRecord.Content = contentRes.value;
-                var valiRes = await ValideText(aiAccount, sendRecord);
+                // 验证文章
+                var valiRes = await ValidateText(Db, aiAccount, sendRecord);
                 if (!valiRes.status)
                 {
                     string msg = valiRes.errordetailed ?? valiRes.errorsimple;
@@ -338,25 +340,36 @@ namespace Work
             }
         }
 
-
-        private static async Task<ReturnValue<string>> ValideText(AiAccount aiAccount, SendRecord sendRecord, int retry = 0)
+        /// <summary>
+        /// 验证文章，评分要在7.5分以上
+        /// </summary>
+        /// <param name="aiAccount"></param>
+        /// <param name="sendRecord"></param>
+        /// <param name="retry">重试次数，不在7.5以上要重试</param>
+        /// <returns></returns>
+        private static async Task<ReturnValue<string>> ValidateText(SqlSugarClient Db, AiAccount aiAccount, SendRecord sendRecord, int retry = 0)
         {
             logger.Info($"{sendRecord.SyncSite}对文章进行{retry+1}次评分");
             string prompt = $"请检测下面文章是否正确采用德语并打分，满分10分，从原创性、可读性、用户价值、语法语言风格等。超过7.5分，则直接返回当前评分，不需要分析。如果文章评分低于7.5分，需要按照你评分标准继续修改该文章，直接返回修改的文章（保留图片和链接）；无法修改则直接返回评分，不需要分析：\n{sendRecord.Content}";
             var valRes = await Volcengine.ChatCompletions(aiAccount.ApiKey, prompt);
+            await RecordAiRequest(Db, sendRecord, valRes, prompt);
             if (valRes.status)
             {
                 if (valRes.value?.Length < 50)
                 {
+                    sendRecord.Score = valRes.value;
                     logger.Debug($"{sendRecord.SyncSite}评分：{valRes.value}");
+                    double? score = ExtractScore(valRes.value);
+                    if (score.HasValue)
+                        sendRecord.Score = score.ToString();
 
-                    if (ExtractScore(valRes.value) >= 7.5)
+                    if (score >= 7.5)
                     {
                         return new ReturnValue<string>() { status = true };
                     }
                     if (retry < 5)
                     {
-                        return await ValideText(aiAccount, sendRecord, ++retry);
+                        return await ValidateText(Db, aiAccount, sendRecord, ++retry);
                     }
                     return new ReturnValue<string>() { status = false, errorsimple = "评分不合格" };
                 }
@@ -385,7 +398,7 @@ namespace Work
                                 return new ReturnValue<string>() { status = true, errorsimple = "评分合格" };
                             }
                         }
-                        return await ValideText(aiAccount, sendRecord, ++retry);
+                        return await ValidateText(Db, aiAccount, sendRecord, ++retry);
                     }
                     else
                     {
@@ -397,9 +410,23 @@ namespace Work
             {
                 logger.Info($"{sendRecord.SyncSite}对文章进行评分出错了");
                 if (retry < 3)
-                    return await ValideText(aiAccount, sendRecord, ++retry);
+                    return await ValidateText(Db, aiAccount, sendRecord, ++retry);
                 return valRes;
             }
+        }
+
+        private static async Task RecordAiRequest(SqlSugarClient Db, SendRecord sendRecord, ReturnValue<string> returnValue, string prompt)
+        {
+            string msg = returnValue.errordetailed ?? returnValue.errorsimple;
+            string content = returnValue.value;
+            await Db.Insertable<AiRecord>(new AiRecord
+            {
+                SendRecordId = sendRecord.Id,
+                Prompt = prompt,
+                Content = returnValue.value,
+                ErrMsg = returnValue.errorsimple,
+                CreateTime = DateTime.Now
+            }).ExecuteCommandAsync();
         }
 
         /// <summary>

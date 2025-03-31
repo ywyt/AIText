@@ -79,7 +79,16 @@
                         </a>
                     </div>
                 }
-                <div class="col-4 mb-3">
+                @if (Model.AiTime.HasValue || !string.IsNullOrEmpty(Model.Content))
+                {
+                    <div class="col-1 mb-3">
+                        <label class="form-label invisible">查看</label>
+                        <a href="./ViewAiRecord?Id=@Model.Id" class="btn btn-success" target="_blank">
+                            AI调用记录
+                        </a>
+                    </div>
+                }
+                <div class="col-3 mb-3">
                     <label class="form-label">评分</label>
                     <input asp-for="Score" class="bg-focus form-control parsley-validated" readonly />
                     <span asp-validation-for="Score" class="text-danger"> </span>
