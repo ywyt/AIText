@@ -11,6 +11,14 @@ namespace Work
     public class WordpressApi
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
+        /// <summary>
+        /// 获取JWT
+        /// </summary>
+        /// <param name="site"></param>
+        /// <param name="user"></param>
+        /// <param name="pwd"></param>
+        /// <returns></returns>
         public static async Task<ReturnValue<string>> GetAccessToken(string site, string user, string pwd)
         {
             ReturnValue<string> rv = new ReturnValue<string>();
@@ -55,6 +63,42 @@ namespace Work
             return rv;
         }
 
+        /// <summary>
+        /// 获取JWT
+        /// </summary>
+        /// <param name="site"></param>
+        /// <param name="user"></param>
+        /// <param name="pwd"></param>
+        /// <returns></returns>
+        public static async Task<ReturnValue<string>> ValidateToken(string site, string accesskey)
+        {
+            ReturnValue<string> rv = new ReturnValue<string>();
+            var options = new RestClientOptions(site);
+            var client = new RestClient(options);
+            var request = new RestRequest("/index.php/wp-json/api/v1/token-validate", Method.Get);
+            request.AddHeader("Authorization", $"Bearer {accesskey}");
+            RestResponse response = await client.ExecuteAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                rv.True("验证通过");
+            }
+            else
+            {
+                logger.Info(response.StatusCode + "|" + response.ErrorMessage + response.Content);
+                rv.False(response.StatusCode + "|" + response.ErrorMessage + response.Content);
+            }
+            return rv;
+        }
+
+        /// <summary>
+        /// post创建文章
+        /// </summary>
+        /// <param name="site"></param>
+        /// <param name="accesskey"></param>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        /// <param name="retry"></param>
+        /// <returns></returns>
         public static async Task<ReturnValue<string>> PostToCreate(string site, string accesskey, string title, string content, int retry = 0) 
         {
             ReturnValue<string> rv = new ReturnValue<string>();
@@ -92,12 +136,23 @@ namespace Work
             return rv;
         }
 
-        public static async Task<ReturnValue<string>> UploadImage(string site, string accesskey, string path, string keyword)
+        /// <summary>
+        /// 上传本地图片，暂时无用
+        /// </summary>
+        /// <param name="site"></param>
+        /// <param name="accesskey"></param>
+        /// <param name="path"></param>
+        /// <param name="keyword"></param>
+        /// <returns></returns>
+        public static async Task<ReturnValue<string>> UploadImage(string site, string accesskey, string path, string keyword, int retry = 0)
         {
             ReturnValue<string> rv = new ReturnValue<string>();
             var options = new RestClientOptions(site);
             var client = new RestClient(options);
-            var request = new RestRequest("/wp-json/wp/v2/media", Method.Post);
+            string uri = "/wp-json/wp/v2/media";
+            if (retry > 0)
+                uri = "/index.php/wp-json/wp/v2/media";
+            var request = new RestRequest(uri, Method.Post);
             request.AddHeader("Authorization", $"Bearer {accesskey}");
             request.AlwaysMultipartFormData = true;
             request.AddFile("file", path);
@@ -137,15 +192,25 @@ namespace Work
             return rv;
         }
 
+        /// <summary>
+        /// 上传图片字节流
+        /// </summary>
+        /// <param name="site"></param>
+        /// <param name="accesskey"></param>
+        /// <param name="imageBytes"></param>
+        /// <param name="keyword"></param>
+        /// <param name="filename"></param>
+        /// <param name="retry"></param>
+        /// <returns></returns>
         public static async Task<ReturnValue<string>> UploadImage(string site, string accesskey, byte[] imageBytes, string keyword, string filename = null, int retry = 0)
         {
             ReturnValue<string> rv = new ReturnValue<string>();
             var options = new RestClientOptions(site);
             var client = new RestClient(options);
-            string path = "/wp-json/wp/v2/media";
+            string uri = "/wp-json/wp/v2/media";
             if (retry > 0)
-                path = "/index.php/wp-json/wp/v2/media";
-            var request = new RestRequest(path, Method.Post);
+                uri = "/index.php/wp-json/wp/v2/media";
+            var request = new RestRequest(uri, Method.Post);
             request.AddHeader("Authorization", $"Bearer {accesskey}");
             request.AlwaysMultipartFormData = true;
             request.AddFile("file", bytes: imageBytes, filename ?? (keyword + ".jpg"), contentType: ContentType.Binary);

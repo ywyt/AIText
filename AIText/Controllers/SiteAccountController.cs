@@ -46,7 +46,8 @@ namespace AIText.Controllers
             var rv = new ReturnValue<string>();
             add.Id = Guid.NewGuid().ToString();
             var now = DateTime.Now;
-            add.Hours = string.Join(",", GetRandHours(add.CountPerDay));
+            if (add.CountPerDay > 0)
+                add.Hours = string.Join(",", GetRandHours(add.CountPerDay));
             add.CreateTime = now;
             add.UpdateTime = now;
             var num = Db.Insertable<SiteAccount>(add).ExecuteCommand();
@@ -75,7 +76,7 @@ namespace AIText.Controllers
             model.Password = edit.Password;
 
             // 每天多少篇文章改变时
-            if (model.CountPerDay != edit.CountPerDay)
+            if (edit.CountPerDay > 0 && model.CountPerDay != edit.CountPerDay)
             {
                 // 重新计算
                 if (!string.IsNullOrEmpty(model.Hours))
@@ -124,6 +125,7 @@ namespace AIText.Controllers
             {
                 query.Where(t => t.SiteType == search.SiteType);
             }
+            query.OrderBy(t => t.CreateTime, OrderByType.Desc);
             return query;
         }
 

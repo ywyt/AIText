@@ -1,4 +1,5 @@
 ﻿using Entitys;
+using Microsoft.IdentityModel.Tokens;
 using NLog;
 using SqlSugar;
 using System;
@@ -124,6 +125,12 @@ namespace Work
 
         }
 
+        /// <summary>
+        /// 选择图片
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="keyword"></param>
+        /// <returns></returns>
         public static ImageResource PickupImage(SqlSugarClient Db, string keyword)
         {
             // 包含该款式+颜色的
@@ -149,6 +156,12 @@ namespace Work
 
         }
 
+        /// <summary>
+        /// 画图
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="Id"></param>
+        /// <returns></returns>
         public static async Task<ReturnValue<string>> DoDraw(SqlSugarClient Db, int Id)
         {
             var sendRecord = Db.Queryable<SendRecord>().Where(o => o.Id == Id).First();
@@ -157,6 +170,12 @@ namespace Work
             return await DoDraw(Db, sendRecord);
         }
 
+        /// <summary>
+        /// 画图
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendRecord"></param>
+        /// <returns></returns>
         public static async Task<ReturnValue<string>> DoDraw(SqlSugarClient Db, SendRecord sendRecord)
         {
             if (sendRecord == null)
@@ -185,6 +204,16 @@ namespace Work
             }
         }
 
+        /// <summary>
+        /// 获取图片结果
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="paintAccount"></param>
+        /// <param name="sendRecord"></param>
+        /// <param name="uuid"></param>
+        /// <param name="id"></param>
+        /// <param name="retry"></param>
+        /// <returns></returns>
         private static async Task<bool> GetImgResult(SqlSugarClient Db, PaintAccount paintAccount, SendRecord sendRecord, string uuid, int id, int retry = 0)
         {
             var imgUrlResult = await Liblibai.GetImage(paintAccount.AccessKey, paintAccount.SecretKey, uuid);
@@ -231,6 +260,12 @@ namespace Work
             }
         }
 
+        /// <summary>
+        /// AI生成文章
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="Id"></param>
+        /// <returns></returns>
         public static async Task<ReturnValue<string>> DoAI(SqlSugarClient Db, int Id)
         {
             var sendRecord = Db.Queryable<SendRecord>().Where(o => o.Id == Id).First();
@@ -238,6 +273,12 @@ namespace Work
             return await DoAI(Db, sendRecord);
         }
 
+        /// <summary>
+        /// AI生成文章
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendRecord"></param>
+        /// <returns></returns>
         public static async Task<ReturnValue<string>> DoAI(SqlSugarClient Db, SendRecord sendRecord)
         {
             logger.Info($"{sendRecord.SyncSite}开始生成文章");
@@ -413,6 +454,14 @@ namespace Work
             }
         }
 
+        /// <summary>
+        /// 记录AI生成文章的请求
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendRecord"></param>
+        /// <param name="returnValue"></param>
+        /// <param name="prompt"></param>
+        /// <returns></returns>
         private static async Task RecordAiRequest(SqlSugarClient Db, SendRecord sendRecord, ReturnValue<string> returnValue, string prompt)
         {
             string msg = returnValue.errordetailed ?? returnValue.errorsimple;
@@ -478,6 +527,11 @@ namespace Work
             return (score, filteredMarkdown);
         }
 
+        /// <summary>
+        /// 提取评分
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public static double? ExtractScore(string input)
         {
             // 匹配评分数字，允许小数和整数，以及可能的“/10”或“分”后缀
@@ -526,12 +580,24 @@ namespace Work
             return (title, body);
         }
 
+        /// <summary>
+        /// 发布文章，同步到站点
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="Id"></param>
+        /// <returns></returns>
         public static async Task<ReturnValue<string>> DoSync(SqlSugarClient Db, int Id)
         {
             var sendRecord = Db.Queryable<SendRecord>().Where(o => o.Id == Id).First();
             return await DoSync(Db, sendRecord);
         }
 
+        /// <summary>
+        /// 发布文章，同步到站点
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendRecord"></param>
+        /// <returns></returns>
         public static async Task<ReturnValue<string>> DoSync(SqlSugarClient Db, SendRecord sendRecord)
         {
             if (sendRecord == null)
@@ -574,7 +640,7 @@ namespace Work
                 }
             }
 
-            // 图片没有上传 TODO: 换个判定，wordpress路径 /uploads/
+            // 图片没有上传
             //if (sendRecord.Content.Contains(sendRecord.ImgUrl))
             if (string.IsNullOrEmpty(sendRecord.ImgUpload))
             {
@@ -590,6 +656,53 @@ namespace Work
             return await PublishArticle(Db, syncAccount, sendRecord);
         }
 
+        /// <summary>
+        /// 发布文章，同步到站点
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendRecord"></param>
+        /// <returns></returns>
+        public static async Task<ReturnValue<string>> CheckAvailable(SqlSugarClient Db, SiteAccount syncAccount, int retry = 0)
+        {
+            var rv = new ReturnValue<string>();
+
+            if (syncAccount == null)
+            {
+                rv.False("同步站点不存在");
+                return rv;
+            }
+            if (syncAccount.SiteType != SiteType.WordPress)
+            {
+                rv.False("站点类型不支持");
+                return rv;
+            }
+
+            // 没有获取JWT或者JWT过期时，生成JWT
+            if (string.IsNullOrEmpty(syncAccount.AccessKey) || retry > 0)
+            {
+                var hasGotToken = await GenAccessToken(Db, syncAccount);
+                if (!hasGotToken)
+                {
+                    rv.False("获取WP站点Token出错");
+                    return rv;
+                }
+            }
+            rv = await WordpressApi.ValidateToken(syncAccount.Site, syncAccount.AccessKey);
+            if (!rv.status && retry == 0)
+            {
+                return await CheckAvailable(Db, syncAccount, ++retry);
+            }
+            return rv;
+        }
+
+        /// <summary>
+        /// 上传图片
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="syncAccount"></param>
+        /// <param name="sendRecord"></param>
+        /// <param name="retry"></param>
+        /// <returns></returns>
         public static async Task<ReturnValue<string>> UploadImg(SqlSugarClient Db, SiteAccount syncAccount, SendRecord sendRecord, int retry = 0)
         {
             var rv = new ReturnValue<string>();
@@ -785,13 +898,21 @@ namespace Work
             }
         }
 
-        private static async Task<bool> GenAccessToken(SqlSugarClient Db, SiteAccount syncAccount, SendRecord sendRecord)
+        /// <summary>
+        /// 获取WP站点的JWT
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="syncAccount"></param>
+        /// <param name="sendRecord"></param>
+        /// <returns></returns>
+        private static async Task<bool> GenAccessToken(SqlSugarClient Db, SiteAccount syncAccount, SendRecord sendRecord = null)
         {
             var tokenRes = await WordpressApi.GetAccessToken(syncAccount.Site, syncAccount.Username, syncAccount.Password);
             if (!tokenRes.status)
             {
                 string msg = "获取WP站点的token出错" + tokenRes.errordetailed ?? tokenRes.errorsimple;
-                await Db.Updateable<SendRecord>().SetColumns(o => o.SyncErrMsg == msg).Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
+                if (sendRecord?.Id > 0)
+                    await Db.Updateable<SendRecord>().SetColumns(o => o.SyncErrMsg == msg).Where(o => o.Id == sendRecord.Id).ExecuteCommandAsync();
                 return false;
             }
             string token = tokenRes.value;
@@ -800,6 +921,13 @@ namespace Work
             return true;
         }
 
+        /// <summary>
+        /// 更新同步结果
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendRes"></param>
+        /// <param name="Id"></param>
+        /// <returns></returns>
         private static async Task<bool> UpdateSyncResult(SqlSugarClient Db, string sendRes, int Id)
         {
             var syncUrl = string.Empty;
