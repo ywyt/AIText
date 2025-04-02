@@ -18,16 +18,16 @@ namespace Work
         {
             ReturnValue<string> rv = new ReturnValue<string>();
             var options = new RestClientOptions("https://ark.cn-beijing.volces.com");
+            options.Timeout = TimeSpan.FromSeconds(300); // 设置超时时间为300秒
             var client = new RestClient(options);
             var request = new RestRequest("/api/v3/chat/completions", Method.Post);
             request.AddHeader("Content-Type", "application/json");
             request.AddHeader("Authorization", $"Bearer {apikey}");
             var sendBody = new
             {
-                model = "deepseek-v3-241226",
+                model = "deepseek-v3-250324",
                 messages = new[]
                 {
-                    new { role = "system", content = "You are a helpful assistant." },
                     new { role = "user", content = prompt }
                 }
             };

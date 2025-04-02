@@ -307,9 +307,7 @@ namespace Work
                     return rv;
                 }
 
-                // 将markdown语法转换为Html
                 sendRecord.Content = Volcengine.MD2Html(sendRecord.Content);
-
                 // 从文章中提取标题
                 (string title, string body) = ExtractTitleAndBody(sendRecord.Content);
 
@@ -505,21 +503,27 @@ namespace Work
         /// <returns></returns>
         private static (string title, string body) ExtractTitleAndBody(string content)
         {
-            // 正则匹配 <h1>、<h2>、<h3> 中的第一个
-            Match titleMatch = Regex.Match(content, @"<(h[1-3])>(.*?)<\/\1>", RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
-            string title = "No Title";
-            if (titleMatch.Success)
+            if (string.IsNullOrWhiteSpace(content))
             {
-                title = titleMatch.Groups[2].Value.Trim(); // 提取标题文本
-                content = content.Replace(titleMatch.Value, "").Trim(); // 移除标题
-            }
-            else
-            {
-                logger.Debug(content);
+                return (string.Empty, string.Empty);
             }
 
-            return (title, content);
+            // 将内容按段落分割
+            var paragraphs = Regex.Split(content.Trim(), @"\r?\n");
+
+            if (paragraphs.Length == 0)
+            {
+                return (string.Empty, content);
+            }
+
+            // 第一段是标题
+            string rawTitle = paragraphs[0].Trim();
+            string title = Regex.Replace(rawTitle, "<.*?>", ""); // Remove all HTML tags;
+
+            // 获取 body（去掉第一段）
+            string body = string.Join("\n", paragraphs.Length > 1 ? paragraphs[1..] : Array.Empty<string>());
+
+            return (title, body);
         }
 
         public static async Task<ReturnValue<string>> DoSync(SqlSugarClient Db, int Id)
