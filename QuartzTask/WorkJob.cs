@@ -41,7 +41,7 @@ namespace QuartzTask
 
             InvokeApi.Init(Db);
 
-            var siteList = Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true && o.StartDate <= DateTime.Now).ToList();
+            var siteList = await Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true && o.StartDate <= DateTime.Now).ToListAsync();
 
             // 控制同时执行调用接口的数量的信号量
             var semaphore = new SemaphoreSlim(MAX_API_COUNT);
@@ -51,13 +51,14 @@ namespace QuartzTask
 
             foreach (var item in siteList)
             {
+                logger.Info($"当前处理的是{item.Site}");
                 if (item.CountPerDay > 24)
                 {
                     logger.Info($"异常的配置：{item.Site}");
                     continue;
                 }
                 // 今日执行
-                var sendRecords = Db.Queryable<SendRecord>().Where(o => o.SyncSiteId == item.Id && o.CreateTime >= currentDate).ToList();
+                var sendRecords = await Db.Queryable<SendRecord>().Where(o => o.SyncSiteId == item.Id && o.CreateTime >= currentDate).ToListAsync();
 
                 // 待发送，继续完成
                 var sendings = sendRecords.Where(o => o.IsSync == false).ToList();
@@ -131,7 +132,7 @@ namespace QuartzTask
             int semaNum = 0;
             while (true)
             {
-                logger.Debug($"等待信号量释放， 等待任务结束{semaNum}/{MAX_API_COUNT}");
+                logger.Info($"等待信号量释放， 等待任务结束{semaNum}/{MAX_API_COUNT}");
                 await semaphore.WaitAsync();
                 semaNum++;
                 // 等待信号量释放完毕
@@ -177,17 +178,27 @@ namespace QuartzTask
                 }
             }
 
-            // 最后同步到站点
-            if (site.SiteType == SiteType.WordPress)
+            // 验证可否发送
+            if (!string.IsNullOrEmpty(sendRecord.Content) && !string.IsNullOrEmpty(sendRecord.Title) 
+                && double.TryParse(sendRecord.Score, out var score) && score > 7.5)
             {
-                var rvSync = await InvokeApi.DoSync(Db, sendRecord);
-                return rvSync;
+                // 最后同步到站点
+                if (site.SiteType == SiteType.WordPress)
+                {
+                    var rvSync = await InvokeApi.DoSync(Db, sendRecord);
+                    return rvSync;
+                }
+                else
+                {
+                    return new ReturnValue<string>() { errorsimple = $"{site.Site}是未实现的类型{site.SiteType}" };
+                }
             }
             else
             {
-                return new ReturnValue<string>() { errorsimple = $"{site.Site}是未实现的类型{site.SiteType}" };
+                string errMsg = $"{site.Site}记录{sendRecord.Id}异常，未执行文章发布。文章标题{sendRecord.Title} 评分{sendRecord.Score}";
+                logger.Error(errMsg);
+                return new ReturnValue<string>() { errorsimple = errMsg };
             }
-
         }
 
     }

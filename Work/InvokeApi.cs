@@ -433,7 +433,7 @@ namespace Work
                                 sendRecord.Score = score.ToString();
 
                             // 它有修改文章， 过短的是评语，还可能是德语的评语，不进行修改
-                            if (!string.IsNullOrEmpty(content) && content.Length > 500)
+                            if (!string.IsNullOrEmpty(content) && content.Length > 1000)
                                 sendRecord.Content = content;
                             else
                             {
@@ -490,7 +490,7 @@ namespace Work
         /// </summary>
         /// <param name="markdownText"></param>
         /// <returns></returns>
-        private static (double?, string) FilterDeContent(string markdownText)
+        public static (double?, string) FilterDeContent(string markdownText)
         {
             double? score = null;
             // 保留原文中的所有空行（通过换行符分段）
@@ -499,7 +499,7 @@ namespace Work
             // 正则表达式匹配中文字符
             Regex chineseRegex = new Regex("[\u4e00-\u9fff]");
             // 正则匹配仅由数字和符号 `+-*/` 组成的段落（允许"评分"两个字，且其他中文会跳过）
-            Regex numberSymbolRegex = new Regex(@"^([\d\s+\-*/.:：评分]+)$");
+            Regex numberSymbolRegex = new Regex(@"^([\d\s+\-*/.:：评分Bewertung]+)$");
 
             StringBuilder resultMarkdown = new StringBuilder(); // 用于存储过滤后的 Markdown 文本
 
