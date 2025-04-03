@@ -25,12 +25,13 @@ namespace QuartzTask
 
         public async Task Execute(IJobExecutionContext context)
         {
+            logger.Info($"任务开始执行时间: {DateTime.Now}");
             if (isRunning)
             {
-                logger.Warn("上一个任务执行中");
+                // 这种情况不应该结束，当前时段任务要继续完成
+                logger.Warn("上一个任务未结束");
                 return;
             }
-            logger.Info($"任务开始执行时间: {DateTime.Now}");
 
             // 初始化参数
             isRunning = true;
@@ -45,6 +46,9 @@ namespace QuartzTask
             // 控制同时执行调用接口的数量的信号量
             var semaphore = new SemaphoreSlim(MAX_API_COUNT);
 
+            DateTime currentDate = DateTime.Now.Date;
+            int currentHour = DateTime.Now.Hour;
+
             foreach (var item in siteList)
             {
                 if (item.CountPerDay > 24)
@@ -53,15 +57,9 @@ namespace QuartzTask
                     continue;
                 }
                 // 今日执行
-                var sendRecords = Db.Queryable<SendRecord>().Where(o => o.SyncSiteId == item.Id && o.CreateTime >= DateTime.Now.Date).ToList();
-                var sentCount = sendRecords.Where(o => o.IsSync == true).Count();
-                // 今天已发送完毕
-                if (sentCount >= item.CountPerDay)
-                {
-                    logger.Info($"{item.Site}今日任务已达成");
-                    continue;
-                }
-                // 待发送
+                var sendRecords = Db.Queryable<SendRecord>().Where(o => o.SyncSiteId == item.Id && o.CreateTime >= currentDate).ToList();
+
+                // 待发送，继续完成
                 var sendings = sendRecords.Where(o => o.IsSync == false).ToList();
                 if (sendings.Count > 0)
                 {
@@ -80,11 +78,34 @@ namespace QuartzTask
                     await Task.Delay(1000);
                 }
 
+                var sentCount = sendRecords.Where(o => o.IsSync == true).Count();
+                // 今天已发送完毕
+                if (sentCount >= item.CountPerDay)
+                {
+                    logger.Info($"{item.Site}今日任务已达成");
+                    continue;
+                }
+
                 // 判断当前小时是否在执行时间列表中
-                if (!string.IsNullOrEmpty(item.Hours) && !($",{item.Hours},").Contains($",{DateTime.Now.Hour},"))
+                if (string.IsNullOrEmpty(item.Hours)) continue;
+
+                // 计算出执行时间小时段
+                int[] hours = item.Hours
+                                .Split(',')                // 按逗号分割字符串
+                                .Select(int.Parse)         // 将每个字符串转换为整数
+                                .ToArray();                // 转换成数组
+
+                if (hours.Length > 0 && !hours.Contains(currentHour))
                 {
                     logger.Info($"{item.Site}不在执行时间范围{item.Hours}内");
-                    continue;
+                    // 由于异常等原因，时间都过了，之前的还没执行（个数没达到要求），这时候要补上
+                    if (hours.Where(o => o < currentHour).Count() > sendRecords.Where(o => o.CreateTime.Hour < currentHour).Count())
+                    {
+                        logger.Info($"{item.Site}由于之前时段的任务未达成，需要补上任务");
+                    }
+                    // 否则跳过
+                    else
+                        continue;
                 }
 
                 if (sendRecords.Any(o => o.CreateTime.Hour == DateTime.Now.Hour))
@@ -125,21 +146,6 @@ namespace QuartzTask
             isRunning = false;
             await Task.CompletedTask;
         }
-
-        //// 计算每天要执行的小时数（动态计算方法）
-        //private static List<int> CalculateExecutionHours(int count)
-        //{
-        //    List<int> hours = new List<int>();
-        //    double interval = 24.0 / count; // 计算间隔时间
-
-        //    for (int i = 0; i < count; i++)
-        //    {
-        //        int hour = (int)Math.Round(i * interval) % 24; // 确保小时数在 0-23 之间
-        //        hours.Add(hour);
-        //    }
-
-        //    return hours;
-        //}
 
         /// <summary>
         /// 处理发送

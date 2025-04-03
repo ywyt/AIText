@@ -111,14 +111,23 @@ namespace Work
                 ImgResourceId = image.Id,
                 ImgUrl = fullURL.ToString()
             };
-            var id = Db.Insertable(sendRecord).ExecuteReturnIdentity();
-            rv.status = id > 0;
-            if (rv.status)
+            try
             {
-                sendRecord.Id = id;
-                rv.value = sendRecord;
-                await Db.Updateable<SiteKeyword>().SetColumns(o => o.UseCount == (o.UseCount + 1)).Where(o => o.Id == siteKeyword.Id).ExecuteCommandAsync();
-                await Db.Updateable<ImageResource>().SetColumns(o => o.UseCount == (o.UseCount + 1)).Where(o => o.Id == image.Id).ExecuteCommandAsync();
+                var id = await Db.Insertable(sendRecord).ExecuteReturnIdentityAsync();
+                rv.status = id > 0;
+                if (rv.status)
+                {
+                    sendRecord.Id = id;
+                    rv.value = sendRecord;
+                    await Db.Updateable<SiteKeyword>().SetColumns(o => o.UseCount == (o.UseCount + 1)).Where(o => o.Id == siteKeyword.Id).ExecuteCommandAsync();
+                    await Db.Updateable<ImageResource>().SetColumns(o => o.UseCount == (o.UseCount + 1)).Where(o => o.Id == image.Id).ExecuteCommandAsync();
+                }
+            } 
+            catch (Exception ex) 
+            {
+                logger.Error($"{site.Site}创建发文记录异常");
+                logger.Error(ex);
+
             }
             logger.Info($"{site.Site}结束创建发文记录");
             return rv;
