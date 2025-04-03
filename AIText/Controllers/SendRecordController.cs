@@ -204,9 +204,8 @@ namespace AIText.Controllers
 
             var sendRecord = Db.Queryable<SendRecord>().Where(o => o.Id == Id).First();
 
-            if (!string.IsNullOrEmpty(sendRecord.Content)) 
+            if (!string.IsNullOrEmpty(sendRecord.Content) && !string.IsNullOrEmpty(sendRecord.Title)) 
             {
-
                 rv.False("文章已经生成");
                 return Json(rv);
             }
