@@ -18,6 +18,8 @@ namespace QuartzTask
         static bool isRunning = false;
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
+        TimeSpan MAX_LONG_TIMEOUT = TimeSpan.FromMinutes(10);
+
         /// <summary>
         /// 控制同时执行调用接口的数量
         /// </summary>
@@ -71,7 +73,13 @@ namespace QuartzTask
                         await semaphore.WaitAsync();
                         _ = Task.Run(async () =>
                         {
-                            await Send(Db, item, sending);
+                            var start = DateTime.Now;
+                            await Task.WhenAny(Send(Db, item, sending), Task.Delay(MAX_LONG_TIMEOUT));
+                            if (DateTime.Now - start >= MAX_LONG_TIMEOUT)
+                            {
+                                logger.Info($"{item.Site}任务超时，放弃处理");
+                            }
+
                             semaphore.Release();
                         });
                     }
@@ -122,7 +130,12 @@ namespace QuartzTask
                     await semaphore.WaitAsync();
                     _ = Task.Run(async () =>
                     {
-                        await Send(Db, item, record.value);
+                        var start = DateTime.Now;
+                        await Task.WhenAny(Send(Db, item, record.value), Task.Delay(MAX_LONG_TIMEOUT));
+                        if (DateTime.Now - start >= MAX_LONG_TIMEOUT)
+                        {
+                            logger.Info($"{item.Site}任务超时，放弃处理");
+                        }
                         semaphore.Release();
                     });
                 }
