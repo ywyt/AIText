@@ -82,7 +82,12 @@ namespace Work
             var urlString = string.Join(",", urlList);
 
             // 选择图片
-            var image = PickupImage(Db, siteKeyword.Keyword);
+            var image = await PickupImage(Db, siteKeyword.Keyword);
+            if (string.IsNullOrEmpty(image?.ImagePath))
+            {
+                rv.False($"{site.Site}获取图片失败");
+                return rv;
+            }
             // 判断图片路径中是否包含斜杠或反斜杠作为分隔符
             if (image.ImagePath.Contains("/") || image.ImagePath.Contains("\\"))
             {
@@ -140,26 +145,26 @@ namespace Work
         /// <param name="Db"></param>
         /// <param name="keyword"></param>
         /// <returns></returns>
-        public static ImageResource PickupImage(SqlSugarClient Db, string keyword)
+        public static async Task<ImageResource> PickupImage(SqlSugarClient Db, string keyword)
         {
             // 包含该款式+颜色的
             if (styles.Any(o => keyword.Contains(o)) && colors.Any(o => keyword.Contains(o)))
             {
                 // 选择最少使用的
-                var image = Db.Queryable<ImageResource>().Where(o => keyword.Contains(o.Style) && keyword.Contains(o.Color)).OrderBy(o => o.UseCount).First();
+                var image = await Db.Queryable<ImageResource>().Where(o => keyword.Contains(o.Style) && keyword.Contains(o.Color)).OrderBy(o => o.UseCount).FirstAsync();
                 return image;
             }
             // 包含该款式的
             else if (styles.Any(o => keyword.Contains(o)))
             {
                 // 选择最少使用的
-                var image = Db.Queryable<ImageResource>().Where(o => keyword.Contains(o.Style)).OrderBy(o => o.UseCount).First();
+                var image = await Db.Queryable<ImageResource>().Where(o => keyword.Contains(o.Style)).OrderBy(o => o.UseCount).FirstAsync();
                 return image;
             }
             // 从所有的文件夹中抽取
             else
             {
-                var image = Db.Queryable<ImageResource>().OrderBy(o => o.UseCount).OrderBy(o => SqlFunc.GetRandom()).First();
+                var image = await Db.Queryable<ImageResource>().OrderBy(o => o.UseCount).OrderBy(o => SqlFunc.GetRandom()).FirstAsync();
                 return image;
             }
 
@@ -737,6 +742,7 @@ namespace Work
                 using (HttpClient client = new HttpClient())
                 {
                     logger.Info($"{sendRecord.SyncSite}下载源图片{sendRecord.ImgUrl}");
+                    byte[] imageBytes = null;
                     try
                     {
                         // 发送 GET 请求并获取响应
@@ -755,7 +761,7 @@ namespace Work
                         }
 
                         // 读取响应内容并返回 byte[]
-                        byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();
+                        imageBytes = await response.Content.ReadAsByteArrayAsync();
                         logger.Info($"{sendRecord.SyncSite}下载原图片完毕，上传字节流");
                         uploadRes = await WordpressApi.UploadImage(syncAccount.Site, syncAccount.AccessKey, imageBytes, sendRecord.Keyword, filename);
                     }
@@ -764,6 +770,14 @@ namespace Work
                         logger.Error("下载图片出错");
                         logger.Error(ex);
                         uploadRes.False("下载图片出错");
+                        if (retry < 1)
+                        {
+                            await Task.Delay(30000);
+                            return await UploadImg(Db, syncAccount, sendRecord, ++retry);
+                        }
+                    }
+                    finally {
+                        imageBytes = null;
                     }
                 }
             }
@@ -772,7 +786,7 @@ namespace Work
             {
                 logger.Info($"{sendRecord.SyncSite}上传失败");
                 // JWT 无效时，重新获取JWT
-                if (uploadRes.errorsimple.StartsWith("403|") || uploadRes.errorsimple.StartsWith("401|"))
+                if (uploadRes.errorsimple.StartsWith("401|"))
                 {
                     logger.Info($"{sendRecord.SyncSite}JWT无效/过期");
                     if (retry < 1)

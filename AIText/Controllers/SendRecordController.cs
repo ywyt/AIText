@@ -101,7 +101,7 @@ namespace AIText.Controllers
             var rv = new ReturnValue<string>();
 
             var sendRecord = Db.Queryable<SendRecord>().Where(o => o.Id == Id).First();
-            var image = InvokeApi.PickupImage(Db, sendRecord.Keyword);
+            var image = await InvokeApi.PickupImage(Db, sendRecord.Keyword);
             if (image != null)
             {
                 // 判断图片路径中是否包含斜杠或反斜杠作为分隔符

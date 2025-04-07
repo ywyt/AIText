@@ -73,13 +73,15 @@ namespace QuartzTask
                         await semaphore.WaitAsync();
                         _ = Task.Run(async () =>
                         {
+                            // 为每个并发操作创建独立的 SqlSugar 实例
+                            var Db1 = SqlSugarHelper.InitDB();
                             var start = DateTime.Now;
-                            await Task.WhenAny(Send(Db, item, sending), Task.Delay(MAX_LONG_TIMEOUT));
+                            await Task.WhenAny(Send(Db1, item, sending), Task.Delay(MAX_LONG_TIMEOUT));
                             if (DateTime.Now - start >= MAX_LONG_TIMEOUT)
                             {
                                 logger.Info($"{item.Site}任务超时，放弃处理");
                             }
-
+                            Db1.Dispose();
                             semaphore.Release();
                         });
                     }
@@ -129,13 +131,15 @@ namespace QuartzTask
                 {
                     await semaphore.WaitAsync();
                     _ = Task.Run(async () =>
-                    {
+                    {   // 为每个并发操作创建独立的 SqlSugar 实例
+                        var Db1 = SqlSugarHelper.InitDB();
                         var start = DateTime.Now;
-                        await Task.WhenAny(Send(Db, item, record.value), Task.Delay(MAX_LONG_TIMEOUT));
+                        await Task.WhenAny(Send(Db1, item, record.value), Task.Delay(MAX_LONG_TIMEOUT));
                         if (DateTime.Now - start >= MAX_LONG_TIMEOUT)
                         {
                             logger.Info($"{item.Site}任务超时，放弃处理");
                         }
+                        Db1.Dispose();
                         semaphore.Release();
                     });
                 }
