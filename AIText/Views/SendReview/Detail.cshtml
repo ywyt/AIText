@@ -1,0 +1,71 @@
+﻿@model Entitys.SendReview
+@{
+    var product = ViewData["SiteProduct"] as Entitys.SiteProduct;
+}
+<div class="card">
+
+    @Html.HiddenFor(obj => obj.Id)
+    @Html.HiddenFor(obj => obj.SiteProductId)
+    <div class="card-body">
+
+        <div class="row mb-3 align-items-end">
+            <div class="col-6 mb-3">
+                <label class="form-label">推送站点</label>
+                @Html.HiddenFor(obj => obj.SyncSiteId)
+                <input asp-for="SyncSite" class="bg-focus form-control parsley-validated" readonly />
+                <span asp-validation-for="SyncSite" class="text-danger"> </span>
+            </div>
+            <div class="col-1 mb-3">
+                <label class="form-check">
+                    <input class="form-check-input" type="checkbox" asp-for="IsSync" readonly onclick="return false;" />
+                    <span class="form-check-label">是否同步</span>
+                </label>
+            </div>
+            <div class="col-5 mb-3">
+                <label class="form-label">同步时间</label>
+                @Html.HiddenFor(obj => obj.SyncErrMsg)
+                <input asp-for="SyncTime" class="bg-focus form-control parsley-validated" readonly />
+                <span asp-validation-for="SyncTime" class="text-danger"> </span>
+            </div>
+            <div class="col-6 mb-3">
+                <label class="form-label">商品名</label>
+                <input value="@product?.name" class="bg-focus form-control parsley-validated" readonly />
+            </div>
+            <div class="col-1 mb-3">
+                <label class="form-label invisible">查看</label>
+                <a href="@product?.Permalink" class="btn btn-secondary" target="_blank">
+                    查看商品
+                </a>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Content))
+            {
+                @if (Model.AiTime.HasValue || !string.IsNullOrEmpty(Model.Content))
+                {
+                    <div class="col-1 mb-3">
+                        <label class="form-label invisible">查看</label>
+                        <a href="./ViewAiReview?Id=@Model.SiteProductId" class="btn btn-success" target="_blank">
+                            AI调用记录
+                        </a>
+                    </div>
+                }
+            }
+            <div class="col-12 mb-3">
+                <label class="form-label">评论内容</label>
+                <textarea asp-for="Content" class="bg-focus form-control parsley-validated" rows="10" readonly></textarea>
+                <span asp-validation-for="Content" class="text-danger"> </span>
+            </div>
+            <div class="col-6 mb-3">
+                <label class="form-label">AI评论生成时间</label>
+                <input asp-for="AiTime" class="bg-focus form-control parsley-validated" readonly />
+                <span asp-validation-for="AiTime" class="text-danger"> </span>
+            </div>
+            <div class="col-6 mb-3">
+                <label class="form-label">创建时间</label>
+                <input asp-for="CreateTime" class="bg-focus form-control parsley-validated" readonly />
+                <span asp-validation-for="CreateTime" class="text-danger"> </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+

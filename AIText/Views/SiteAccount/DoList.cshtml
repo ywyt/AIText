@@ -41,7 +41,16 @@
                         </td>
                         <td class="text-muted">
                             <div class="btn-list flex-nowrap">
-                                <a data-src="@Url.Content("~/SiteAccount/Edit?Id="+info.Id)" class="btn btn-azure">
+                                @if (!string.IsNullOrEmpty(info.WcKey) && !string.IsNullOrEmpty(info.WcSecret))
+                                {
+                                    <a href="/SiteAccount/Products?Id=@info.Id" title="商品列表" class="btn btn-primary">
+                                        商品列表
+                                    </a>
+                                    <a data-confirm="/SiteAccount/TestProducts?Id=@info.Id" title="拉取商品列表" class="btn btn-warning">
+                                        拉取商品列表
+                                    </a>
+                                }
+                                <a data-src="@Url.Content("~/SiteAccount/Edit?Id="+info.Id)" class="btn btn-azure" title="修改">
                                     修改
                                 </a>
                                 <a data-confirm="/SiteAccount/DoDelete?Id=@info.Id" title="是否删除" class="btn btn-danger">

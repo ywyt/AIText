@@ -1,5 +1,7 @@
 ﻿using Entitys;
+using Entitys.WP;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using NLog;
 using SqlSugar;
 using System;
@@ -25,6 +27,10 @@ namespace Work
         static int promptTempIdx = 0;
         static List<string> styles = new List<string>();
         static List<string> colors = new List<string>();
+        static List<string> names = new List<string>();
+        static int nameIdx = 0;
+        static DateTime? ProductTime = null;
+        const int UPDATE_PRODUCT_DAYS = 7;
 
         public static void Init(SqlSugarClient Db)
         {
@@ -47,12 +53,124 @@ namespace Work
             colors = Db.Queryable<ImageResource>().GroupBy(o => o.Color).Select(o => o.Color).ToList();
         }
 
+        public static async Task InitReview(SqlSugarClient Db)
+        {
+            if (!(names.Count > 0))
+            {
+                names.AddRange(new string[]  {
+                    "Amelie Schmidt","Elisa Müller","Lila Hoffmann","Nora Schneider","Emma Wagner","Mia Bauer","Luna Koch","Emilia Mayer","Wolf Clara","Lea Klein","Sophie Weber","Johanna Lehmann","Luisa Baumann","Lena Schröder","Klara Vogel","Stella Schwarz","Carla Schmitt","Julia Krause","Hannah Frank","Leonie Marx","Melanie Höhne","Sarah Dorn","Laura Feld","Viola Berg","Iris Bach","Thea Hart","Elsa Kopf","Alma Ring","Tilda Stein","Amelie Weber","Elisa Lehmann","Lila Baumann","Nora Schröder","Emma Vogel","Mia Schwarz","Luna Schmitt","Emilia Krause","Clara Frank","Lea Marx","Sophie Höhne","Johanna Dorn","Luisa Feld","Lena Berg","Klara Bach","Stella Hart","Carla Kopf","Julia Ring","Hannah Stein","Leonie Schmidt","Melanie Müller","Sarah Hoffmann","Laura Schneider","Viola Wagner","Iris Bauer","Thea Koch","Elsa Mayer","Alma Wolf","Tilda Klein","Amelie Baumann","Elisa Schröder","Lila Vogel","Nora Schwarz","Emma Schmitt","Mia Krause","Luna Frank","Emilia Marx","Clara Höhne","Lea Dorn","Sophie Feld","Johanna Berg","Luisa Bach","Lena Hart","Klara Kopf","Stella Ring","Carla Stein","Julia Schmidt","Hannah Müller","Leonie Hoffmann","Melanie Schneider","Sarah Wagner","Laura Bauer","Viola Koch","Iris Mayer","Thea Wolf","Elsa Klein","Alma Weber","Tilda Lehmann","Amelie Frank","Elisa Marx","Lila Höhne","Nora Dorn","Emma Feld","Mia Berg","Luna Bach","Emilia Hart","Clara Kopf","Lea Ring","Sophie Stein","Johanna Schmidt","Luisa Müller","Klara Hoffmann","Stella Schneider","Carla Wagner","Julia Bauer","Hannah Koch","Leonie Mayer","Melanie Wolf","Sarah Klein","Laura Weber","Viola Lehmann","Iris Baumann","Thea Schröder","Elsa Vogel","Alma Schwarz","Tilda Schmitt","Amelie Krause","Elisa Frank","Lila Marx","Nora Höhne","Emma Dorn","Mia Feld","Luna Berg","Emilia Bach","Clara Hart","Lea Kopf","Sophie Ring","Johanna Stein","Luisa Schmidt","Klara Müller","Stella Hoffmann","Carla Schneider","Julia Wagner","Hannah Bauer","Leonie Koch","Melanie Mayer","Sarah Wolf","Laura Klein","Viola Weber","Iris Lehmann","Thea Baumann","Elsa Schröder","Alma Vogel","Tilda Schwarz","Amelie Schmitt","Elisa Krause","Lila Frank","Nora Marx","Emma Höhne","Mia Dorn","Luna Feld","Emilia Berg","Clara Bach","Lea Hart","Sophie Kopf","Johanna Ring","Luisa Stein","Klara Schmidt","Stella Müller","Carla Hoffmann","Julia Schneider","Hannah Wagner","Leonie Bauer","Melanie Koch","Sarah Mayer","Laura Wolf","Viola Klein","Iris Weber","Thea Lehmann","Elsa Baumann","Alma Schröder","Tilda Vogel","Amelie Schwarz","Elisa Schmitt","Lila Krause","Nora Frank","Emma Marx","Mia Höhne","Luna Dorn","Emilia Feld","Clara Berg","Lea Bach","Sophie Hart","Johanna Kopf","Luisa Ring","Klara Stein","Stella Schmidt","Carla Müller","Julia Hoffmann","Hannah Schneider","Leonie Wagner","Melanie Bauer","Sarah Koch","Laura Mayer","Viola Wolf","Iris Klein","Thea Weber","Elsa Lehmann","Alma Baumann","Tilda Schröder","Amelie Vogel","Elisa Schwarz","Lila Schmitt","Nora Krause","Emma Frank","Mia Marx","Luna Höhne","Emilia Dorn","Clara Feld","Lea Berg","Sophie Bach","Johanna Hart","Luisa Kopf","Klara Ring","Stella Stein","Carla Schmidt","Julia Müller","Hannah Hoffmann","Leonie Schneider","Melanie Wagner","Sarah Bauer","Laura Koch","Viola Mayer","Iris Wolf","Thea Klein","Elsa Weber","Alma Lehmann","Tilda Baumann","Amelie Schröder","Elisa Vogel","Lila Schwarz","Nora Schmitt","Emma Krause","Mia Frank","Luna Marx","Emilia Höhne","Clara Dorn","Lea Feld","Sophie Berg","Johanna Bach","Luisa Hart","Klara Kopf","Stella Ring","Carla Stein","Julia Schmidt","Hannah Müller","Leonie Hoffmann","Melanie Schneider","Sarah Wagner","Laura Bauer","Viola Koch","Iris Mayer","Thea Wolf","Elsa Klein","Alma Weber","Tilda Lehmann","Amelie Frank","Elisa Marx","Lila Höhne","Nora Dorn","Emma Feld","Mia Berg","Luna Bach","Emilia Hart","Clara Kopf","Lea Ring","Sophie Stein","Johanna Schmidt","Luisa Müller","Klara Hoffmann","Stella Schneider","Carla Wagner","Julia Bauer","Hannah Koch","Leonie Mayer","Melanie Wolf","Sarah Klein","Laura Weber","Viola Lehmann","Iris Baumann","Thea Schröder","Elsa Vogel","Alma Schwarz","Tilda Schmitt","Amelie Krause","Elisa Frank","Lila Marx","Nora Höhne","Emma Dorn","Mia Feld","Luna Berg","Emilia Bach","Clara Hart","Lea Kopf","Sophie Ring","Johanna Stein","Luisa Schmidt","Klara Müller","Stella Hoffmann","Carla Schneider","Julia Wagner","Hannah Bauer","Leonie Koch","Melanie Mayer","Sarah Wolf","Laura Klein","Viola Weber","Iris Lehmann","Thea Baumann","Elsa Schröder","Alma Vogel","Tilda Schwarz","Amelie Schmitt","Elisa Krause","Lila Frank","Nora Marx","Emma Höhne","Mia Dorn","Luna Feld","Emilia Berg","Clara Bach","Lea Hart","Sophie Kopf","Johanna Ring","Luisa Stein","Klara Schmidt","Stella Müller","Carla Hoffmann","Julia Schneider","Hannah Wagner","Leonie Bauer","Melanie Koch","Sarah Mayer","Laura Wolf","Viola Klein","Iris Weber","Thea Lehmann","Elsa Baumann","Alma Schröder","Tilda Vogel","Amelie Schwarz","Elisa Schmitt","Lila Krause","Nora Frank","Emma Marx","Mia Höhne","Luna Dorn","Emilia Feld","Clara Berg","Lea Bach","Sophie Hart","Johanna Kopf","Luisa Ring","Klara Stein","Stella Schmidt","Carla Müller","Julia Hoffmann","Hannah Schneider","Leonie Wagner","Melanie Bauer","Sarah Koch","Laura Mayer","Viola Wolf","Iris Klein","Thea Weber","Elsa Lehmann","Alma Baumann","Tilda Schröder","Amelie Vogel","Elisa Schwarz","Lila Schmitt","Nora Krause","Emma Frank","Mia Marx","Luna Höhne","Emilia Dorn","Clara Feld","Lea Berg","Sophie Bach","Johanna Hart","Luisa Kopf","Klara Ring","Stella Stein","Carla Schmidt","Julia Müller","Hannah Hoffmann","Leonie Schneider","Melanie Wagner","Sarah Bauer","Laura Koch","Viola Mayer","Iris Wolf","Thea Klein","Elsa Weber","Alma Lehmann","Tilda Baumann","Amelie Schröder","Elisa Vogel","Lila Schwarz","Nora Schmitt","Emma Krause","Mia Frank","Luna Marx","Emilia Höhne","Clara Dorn","Lea Feld","Sophie Berg","Johanna Bach","Luisa Hart","Klara Kopf","Stella Ring","Carla Stein","Julia Schmidt","Hannah Müller","Leonie Hoffmann","Melanie Schneider","Sarah Wagner","Laura Bauer","Viola Koch","Iris Mayer","Thea Wolf","Elsa Klein","Alma Weber","Tilda Lehmann","Amelie Frank","Elisa Marx","Lila Höhne","Nora Dorn","Emma Feld","Mia Berg","Luna Bach","Emilia Hart","Clara Kopf","Lea Ring","Sophie Stein","Johanna Schmidt","Luisa Müller","Klara Hoffmann","Stella Schneider","Carla Wagner","Julia Bauer","Hannah Koch","Leonie Mayer","Melanie Wolf","Sarah Klein","Laura Weber","Viola Lehmann","Iris Baumann","Thea Schröder","Elsa Vogel","Alma Schwarz","Tilda Schmitt","Amelie Krause","Elisa Frank","Lila Marx","Nora Höhne","Emma Dorn","Mia Feld","Luna Berg","Emilia Bach","Clara Hart","Lea Kopf","Sophie Ring","Johanna Stein","Luisa Schmidt","Klara Müller","Stella Hoffmann","Carla Schneider","Julia Wagner","Hannah Bauer","Leonie Koch","Melanie Mayer","Sarah Wolf","Laura Klein","Viola Weber","Iris Lehmann","Thea Baumann","Elsa Schröder","Alma Vogel","Tilda Schwarz","Amelie Schmitt","Elisa Krause","Lila Frank","Nora Marx","Emma Höhne","Mia Dorn","Luna Feld","Emilia Berg","Clara Bach","Lea Hart","Sophie Kopf","Johanna Ring","Luisa Stein","Klara Schmidt","Stella Müller","Carla Hoffmann","Julia Schneider","Hannah Wagner","Leonie Bauer","Melanie Koch","Sarah Mayer","Laura Wolf","Viola Klein","Iris Weber","Thea Lehmann","Elsa Baumann","Alma Schröder","Tilda Vogel","Amelie Schwarz","Elisa Schmitt","Lila Krause","Nora Frank","Emma Marx","Mia Höhne","Luna Dorn","Emilia Feld","Clara Berg","Lea Bach","Sophie Hart","Johanna Kopf","Luisa Ring","Klara Stein","Stella Schmidt","Carla Müller","Julia Hoffmann","Hannah Schneider","Leonie Wagner","Melanie Bauer","Sarah Koch","Laura Mayer","Viola Wolf","Iris Klein","Thea Weber","Elsa Lehmann","Alma Baumann","Tilda Schröder","Amelie Vogel","Elisa Schwarz","Lila Schmitt","Nora Krause","Emma Frank","Mia Marx","Luna Höhne","Emilia Dorn","Clara Feld","Lea Berg","Sophie Bach","Johanna Hart","Luisa Kopf","Klara Ring","Stella Stein","Carla Schmidt","Julia Müller","Hannah Hoffmann","Leonie Schneider","Melanie Wagner","Sarah Bauer","Laura Koch","Viola Mayer","Iris Wolf","Thea Klein","Elsa Weber","Alma Lehmann","Tilda Baumann","Amelie Schröder","Elisa Vogel","Lila Schwarz","Nora Schmitt","Emma Krause","Mia Frank","Luna Marx","Emilia Höhne","Clara Dorn","Lea Feld","Sophie Berg","Johanna Bach","Luisa Hart","Klara Kopf","Stella Ring","Carla Stein","Julia Schmidt","Hannah Müller","Leonie Hoffmann","Melanie Schneider","Sarah Wagner","Laura Bauer","Viola Koch","Iris Mayer","Thea Wolf","Elsa Klein","Alma Weber","Tilda Lehmann","Amelie Frank","Elisa Marx","Lila Höhne","Nora Dorn","Emma Feld","Mia Berg","Luna Bach","Emilia Hart","Clara Kopf","Lea Ring","Sophie Stein","Johanna Schmidt","Luisa Müller","Klara Hoffmann","Stella Schneider","Carla Wagner","Julia Bauer","Hannah Koch","Leonie May","Amelie Bauer","Anna-Lena Schmidt","Adele Hoffmann","Alena Wagner","Alexandra Müller","Andrea Koch","Antonia Mayer","Anya Vogel","Astrid Klein","Auguste Braun","Bettina Weber","Brigitte Hoffmann","Carina Fischer","Charlotte Koch","Christina Schwarz","Clara Lehmann","Constanze Wolf","Daniela Baumann","Daria Schröder","Elena Maier","Elisa Hoffmann","Emilia Schneider","Emma Wagner","Eva-Lotta Vogel","Frida Müller","Frieda Hoffmann","Friederike Schmitt","Fiona Krause","Franziska Bauer","Freya Lehmann","Gina Mayer","Greta Klein","Hanna Weber","Hedwig Wolf","Helena Baumann","Henriette Schröder","Hilda Maier","Ida Hoffmann","Ines Schneider","Ingeborg Vogel","Iris Klein","Isabella Bauer","Isolde Lehmann","Jacqueline Schmitt","Jana Wagner","Jenny Koch","Johanna Mayer","Judith Wolf","Julia Baumann","Karina Schröder","Karla Maier","Klara Hoffmann","Kristina Schneider","Lena Müller","Leonie Bauer","Lia Wagner","Lieselotte Koch","Lilly Mayer","Linda Wolf","Livia Baumann","Maja Schröder","Maren Maier","Maria Hoffmann","Marlene Schneider","Martina Vogel","Mathilda Klein","Maya Bauer","Mieke Lehmann","Mila Wagner","Mona Koch","Nadja Mayer","Nele Wolf","Nina Baumann","Noemi Schröder","Nova Maier","Oona Hoffmann","Paula Schneider","Petra Vogel","Pia Klein","Ragna Bauer","Ramona Lehmann","Rebecca Wagner","Regina Koch","Rosa Mayer","Ruby Wolf","Ruth Baumann","Sabine Schröder","Sandra Maier","Sarah Hoffmann","Seija Schneider","Silke Vogel","Sophia Klein","Stella Bauer","Svenja Lehmann","Tanja Wagner","Theresa Koch","Tina Mayer","Ursula Wolf","Valerie Baumann","Vanessa Schröder","Vera Maier","Verena Hoffmann","Veronika Schneider","Viktoria Vogel","Viola Klein","Vivian Bauer","Wanda Lehmann","Wilhelmina Wagner","Yasmin Koch","Yvonne Mayer","Zara Wolf","Anika von Berlin","Bettina aus München","Carolin Heidelberg","Daniela Köln","Elena Schwarzwald","Frieda Bayern","Greta Hamburg","Hanna Dresden","Ida Ruhr","Jana Baden","Katrin Allgäu","Lena Schleswig","Mara Stuttgart","Nina Tirol","Paula Saarbrücken","Rosa Hessisch","Sophie Hannover","Tanja Bremen","Ursula Franken","Viktoria Ostfriesland","Adele_Nürnberg","Anna.Bayer","Bettina_Hessen","Carla_Sachsen","Diana_Schleswig","Eva_BadenWürttemberg","Frieda_Hamburg","Greta_Bremen","Hanna_Köln","Ida_Frankfurt","Ines_Mainz","Jana_Dortmund","Karina_Stuttgart","Lena_Münster","Maja_Berlin","Maria_Bonn","Nina_Hannover","Paula_Dresden","Rosa_Freiburg","Sarah_Leverkusen","Tina_Mannheim","Ursula_Karlsruhe","Vera_Magdeburg","Wanda_Braunschweig","Yasmin_Lübeck","Zara_Mönchengladbach","Astrid_Hofmann","Brigitte_Weber","Christina_Klein","Daniela_Schwarz","Amalie Hoffmann","Adelheid Bauer","Alena Schmidt","Annika Wagner","Ariane Koch","Antje Mayer","Astrid Wolf","Aurelia Baumann","Amara Lehmann","Aniela Vogel","Benediktte Schwarz","Brunhilde Klein","Bärbel Schröder","Bettina Weber","Bianca Fischer","Brigitta Maier","Berta Hoffmann","Bella Wolf","Birgit Lehmann","Blanka Baumann","Carolina Koch","Cordelia Mayer","Christel Vogel","Clara Wagner","Cäcilia Schneider","Charlotte Schmitt","Catharina Bauer","Constanze Klein","Carina Wolf","Cora Lehmann","Dorothea Hoffmann","Dagmar Schmidt","Diana Maier","Delia Wagner","Daniela Koch","Dominique Mayer","Doreen Wolf","Desirée Baumann","Didem Schröder","Donna Vogel","Edeltraud Klein","Elisabeth Weber","Emilia Schneider","Erika Bauer","Elsa Hoffmann","Enya Schmidt","Estella Maier","Emma Wolf","Eugenia Lehmann","Elvira Baumann","Friederike Koch","Franziska Mayer","Felicitas Wolf","Flora Lehmann","Frieda Bauer","Fabienne Hoffmann","Frida Schmidt","Fiona Wagner","Freya Koch","Fernanda Mayer","Gertrud Klein","Gabriele Weber","Gisela Bauer","Greta Hoffmann","Gina Schmidt","Genevieve Maier","Gunda Wolf","Giovanna Lehmann","Gudrun Baumann","Grete Schröder","Helga Koch","Henriette Mayer","Hanna Wolf","Heidi Bauer","Hilda Hoffmann","Hildegard Schmidt","Harmony Maier","Hannelore Wagner","Hedwig Lehmann","Hedy Baumann","Ingrid Vogel","Isabella Koch","Ida Mayer","Ilse Wolf","Ines Schneider","Irene Bauer","Iris Hoffmann","Ingeborg Schmidt","Ivonne Maier","India Wagner","Johanna Koch","Judith Mayer","Jana Wolf","Julia Baumann","Josefine Schröder","Jasmin Hoffmann","Jeanine Schmidt","Jule Maier","Johanna-Luise Wagner","Justine Lehmann","Katharina Koch","Karolina Mayer","Klara Wolf","Karla Bauer","Kristina Hoffmann","Katja Schmidt","Kunigunde Klein","Kaiserin Weber","Karina Schröder","Kira Baumann","Leonie Koch","Luisa Mayer","Lotte Wolf","Lara Bauer","Livia Hoffmann","Lina Schmidt","Lieselotte Klein","Luna Maier","Larissa Wagner","Leonore Lehmann","Magdalena Koch","Melanie Mayer","Mia Wolf","Marlene Bauer","Mathilda Hoffmann","Mira Schmidt","Monika Maier","Marisa Wagner","Mina Lehmann","Marlene-Schörlein","Natalie Koch","Nina Mayer","Nora Wolf","Natalia Bauer","Nele Hoffmann","Nicole Schmidt","Nanna Maier","Noreen Wagner","Naomi Lehmann","Nelly Baumann","Olivia Koch","Olga Mayer","Ophelia Wolf","Ottilie Bauer","Olympia Hoffmann","Oona Schmidt","Ortrud Klein","Octavia Weber","Onora Maier","Odette Wagner","Paula Koch","Petra Mayer","Pia Wolf","Paulina Bauer","Philomena Hoffmann","Peggy Schmidt","Pamela Maier","Patrizia Wagner","Pamina Lehmann","Pia-Marie Baumann","Ramona Koch","Ronja Mayer","Regina Wolf","Rosa Bauer","Rebekka Hoffmann","Ruby Schmidt","Renate Maier","Romy Wagner","Quirin Schneider","Rahel Lehmann","Saskia Koch","Stella Mayer","Susanne Wolf","Sophie Bauer","Selma Hoffmann","Sandra Schmidt","Seraphine Maier","Silke Wagner","Stefanie Lehmann","Sonja Baumann","Theresia Koch","Tina Mayer","Tanja Wolf","Thea Bauer","Tatjana Hoffmann","Tilda Schmidt","Toni Maier","Theodora Wagner","Tabea Lehmann","Tiana Baumann","Ulrike Koch","Uschi Mayer","Valerie Wolf","Verena Bauer","Viola Hoffmann","Viktoria Schmidt","Yvonne Koch","Yasmin Mayer","Zara Wolf","Zelda Bauer","Anni-Maria Schweinsteiger","Käthe aus München","Lisl Bayer","Trude Hofbauer","Hanni Wirtz","Marlene Berg","Gerti Fuchs","Lotte Schneider","Emmy Müller","Nanni Schwarz","Retro Nickname Variants","Alwine","Brunhilde","Dietlinde","Erna","Freumina","FloraFind","SelmaSavvy","SilkeStyle","ViolaVogue","YaraYield","ZaraZest","IrisInnovate","StylishSommelier","TrendyChef","SavvyArtist","GlamArchitect","StylePhotographer","HuntJournalist"
+                });
+            }
+            if (nameIdx == 0 || nameIdx > 5000)
+            {
+                nameIdx = new Random().Next(0, names.Count);
+            }
+            // 初始化站点商品
+            if (!ProductTime.HasValue || ProductTime < DateTime.Now.AddDays(-UPDATE_PRODUCT_DAYS))
+            {
+                ProductTime = DateTime.Now;
+                // 防止频繁刷新产品信息
+                if (Db.Queryable<SiteProduct>().Any(o => o.CreateTime > DateTime.Now.AddDays(-1)))
+                    return;
+                // 确保是启用的，有WC授权的站点
+                var siteList = Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true && o.WcKey != null && o.WcKey != "" && o.WcSecret != null && o.WcSecret != "").ToList();
+                foreach(var site in siteList)
+                {
+                    var totalProductRes = await WordpressApi.WcProductsTotal(site.Site, site.WcKey, site.WcSecret);
+                    if (totalProductRes.status && totalProductRes.value > 0)
+                    {
+                        var productCount = Db.Queryable<SiteProduct>().Where(p => p.SiteId == site.Id).Count();
+                        if (productCount < totalProductRes.value)
+                        {
+                            logger.Info($"{site.Site}正在拉取商品");
+                            await GetProducts(Db, site, 1);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static async Task<bool> GetProducts(SqlSugarClient Db, SiteAccount model, int page = 1)
+        {
+            int pageSize = 10;
+            var rv = await WordpressApi.WcProducts(model.Site, model.WcKey, model.WcSecret, page, pageSize);
+            if (rv.status)
+            {
+                List<WooCommerceProduct> datas = new List<WooCommerceProduct>();
+                try
+                {
+                    datas = JsonConvert.DeserializeObject<List<WooCommerceProduct>>(rv.value);
+                }
+                catch (Exception ex)
+                {
+                    rv.False("数据解析出错");
+                    return false;
+                }
+                if (datas != null && datas.Count > 0)
+                {
+                    List<SiteProduct> list = new List<SiteProduct>();
+                    foreach (var item in datas)
+                    {
+                        // 已有记录
+                        if (Db.Queryable<SiteProduct>().Any(o => o.ProductId == item.id && o.SiteId == model.Id))
+                        {
+                            // 近期修改的
+                            if (item.date_modified_gmt > DateTime.Now.AddDays(-UPDATE_PRODUCT_DAYS - 1)) 
+                            {
+                                await Db.Updateable<SiteProduct>().SetColumns(o => new SiteProduct() { status = item.status, name = item.name }).Where(o => o.ProductId == item.id && o.SiteId == model.Id).ExecuteCommandAsync();
+                            }
+                            continue;
+                        }
+                        await Task.Delay(100);
+                        var rcount = await WordpressApi.WcProductReviewsTotal(model.Site, model.WcKey, model.WcSecret, item.id);
+                        var product = new SiteProduct()
+                        {
+                            SiteId = model.Id,
+                            Site = model.Site,
+                            ProductId = item.id,
+                            Permalink = item.permalink?.ToString(),
+                            date_created_gmt = item.date_created_gmt,
+                            CreateTime = DateTime.Now,
+                            ReviewsCount = rcount.status ? rcount.value : 0,
+                            status = item.status,
+                            name = item.name
+                        };
+                        list.Add(product);
+                    }
+                    if (list.Count > 0)
+                    {
+                        // 批量插入
+                        await Db.Insertable(list).ExecuteCommandAsync();
+                    }
+                    else
+                    {
+                        return true;
+                    }
+
+                    // 当前条数不足，说明已经到头了
+                    if (datas.Count < pageSize)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        await Task.Delay(1000);
+                        return await GetProducts(Db, model, page + 1);
+                    }
+                }
+                else
+                    return true;
+            }
+            else
+                return false;
+        }
+
+        #region 文章相关
         /// <summary>
         /// 创建记录
         /// </summary>
         /// <param name="Db"></param>
         /// <param name="site"></param>
-        /// <param name="sendRecord"></param>
         public static async Task<ReturnValue<SendRecord>> CreateRecord(SqlSugarClient Db, SiteAccount site)
         {
             var rv = new ReturnValue<SendRecord>();
@@ -980,5 +1098,358 @@ namespace Work
             return ret > 0;
 
         }
+
+        #endregion
+
+        #region 评论相关
+
+        /// <summary>
+        /// 创建评论记录
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="site"></param>
+        /// <param name="sendReview"></param>
+        public static async Task<ReturnValue<SendReview>> CreateReview(SqlSugarClient Db, SiteAccount site, SiteProduct product)
+        {
+            var rv = new ReturnValue<SendReview>();
+            if (site == null || string.IsNullOrEmpty(site.WcKey) || string.IsNullOrEmpty(site.WcSecret))
+                return rv;
+
+            logger.Info($"{site.Site}开始创建评论记录");
+
+            // 抽取名字
+            Interlocked.Increment(ref nameIdx);
+            var name = names[nameIdx % names.Count];
+            int rating = 5;
+            // TODO: 有时候给个少于5分的
+            SendReview sendReview = new SendReview
+            {
+                SiteProductId = product.Id,
+                ProductId = product.ProductId,
+                Name = name,
+                Rating = 5,
+
+                IsSync = false,
+                SyncSiteId = site.Id,
+                SyncSite = site.Site,
+                SyncTime = null,
+                CreateTime = DateTime.Now,
+            };
+            try
+            {
+                var id = await Db.Insertable(sendReview).ExecuteReturnIdentityAsync();
+                rv.status = id > 0;
+                if (rv.status)
+                {
+                    sendReview.Id = id;
+                    rv.value = sendReview;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error($"{site.Site}创建评论记录异常");
+                logger.Error(ex);
+
+            }
+            logger.Info($"{site.Site}结束创建评论记录");
+            return rv;
+
+        }
+
+        /// <summary>
+        /// 抽一个商品的AI评论
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendReview"></param>
+        /// <returns></returns>
+        public static async Task<ReturnValue<string>> DrawAIReview(SqlSugarClient Db, SendReview sendReview, int retry = 0)
+        {
+            logger.Info($"{sendReview.SyncSite}开始抽取评论");
+            if (sendReview == null)
+                return new ReturnValue<string> { errorsimple = "记录不存在" };
+
+            var rv = new ReturnValue<string>();
+
+            var review = await Db.Queryable<SiteReview>().Where(o => o.SiteProductId == sendReview.SiteProductId && o.IsUse == false).FirstAsync();
+            if (review == null)
+            {
+                if (retry < 1)
+                {
+                    var siteProduct = await Db.Queryable<SiteProduct>().Where(o => o.Id == sendReview.SiteProductId).FirstAsync();
+                    // 没有评论时，生成评论
+                    var res = await DoAIReview(Db, siteProduct);
+                    if (res.status)
+                    {
+                        return await DrawAIReview(Db, sendReview, ++retry);
+                    }
+                    else
+                    {
+                        logger.Info($"{sendReview.SyncSite}没有{siteProduct.name}评论");
+                        rv.False($"{sendReview.SyncSite}没有{siteProduct.name}评论");
+                    }
+                }
+                else
+                {
+                    rv.False($"{sendReview.SyncSite}没有获取到评论");
+                }
+                return rv;
+            }
+            else
+            {
+                logger.Info($"{sendReview.SyncSite}抽取了评论，修改记录");
+                // 抽取评论后，对应的修改记录
+                sendReview.Content = review.Content;
+                sendReview.SiteReviewId = review.Id;
+                sendReview.AiTime = review.CreateTime;
+                await Db.Updateable<SendReview>().SetColumns(o => new SendReview { Content = review.Content, SiteReviewId = review.Id, AiTime = review.CreateTime }).Where(o => o.Id == sendReview.Id).ExecuteCommandAsync();
+                review.IsUse = true;
+                await Db.Updateable<SiteReview>().SetColumns(o => o.IsUse == true).Where(o => o.Id == review.Id).ExecuteCommandAsync();
+                rv.True("抽取评论成功");
+                return rv;
+            }
+        }
+
+        /// <summary>
+        /// AI生成评论
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendReview"></param>
+        /// <returns></returns>
+        public static async Task<ReturnValue<string>> DoAIReview(SqlSugarClient Db, SiteProduct siteProduct, int retry = 0)
+        {
+            logger.Info($"{siteProduct.Site}开始生成商品{siteProduct.name}的评论");
+            if (siteProduct == null)
+                return new ReturnValue<string> { errorsimple = "记录不存在" };
+
+            var rv = new ReturnValue<string>();
+
+            // AI账号
+            var aiAccount = Db.Queryable<AiAccount>().Where(o => o.IsEnable == true).First();
+
+            int GEN_COUNT = 10;
+
+            // 组装指令
+            var prompt = $"请用德语写出{GEN_COUNT}条真实的德国啤酒裙女性用户好评，商品链接{siteProduct.Permalink}，要求参照德国啤酒裙用户人群职业、画像特点，重点突出啤酒裙款式丰富多样、材料环保、设计新颖、受众多。";
+            prompt += "请注意：只需要回复评论的具体内容，不需要评论之外的信息，也不需要序号、引用（引号），一段为一个评论";
+
+            logger.Info($"{siteProduct.Site}发送生成评论请求");
+            var contentRes = await Volcengine.ChatCompletions(aiAccount.ApiKey, prompt);
+            var aiId = await RecordAiRequest(Db, siteProduct, contentRes, prompt);
+            logger.Info($"{siteProduct.Site}生成评论请求响应了");
+            if (!contentRes.status)
+            {
+                string msg = contentRes.errordetailed ?? contentRes.errorsimple;
+                rv.False("生成评论出错" + msg);
+                logger.Info("生成评论出错" + msg);
+                return rv;
+            }
+            else
+            {
+                var content = contentRes.value;
+
+                content = Volcengine.MD2Html(content);
+
+                // 从评论记录中提取合格评论
+                var reviews = ExtractReviews(content);
+
+                // 当评论数达到预期，插入评论列表
+                if (reviews.Count == GEN_COUNT)
+                {
+                    logger.Info($"{siteProduct.Site}生成评论成功，插入{siteProduct.name}的{reviews.Count}条评论记录");
+                    List<SiteReview> insertReviews = reviews.Select(o => new SiteReview
+                    {
+                        AiReviewId = aiId,
+                        Content = o,
+                        CreateTime = DateTime.Now,
+                        IsUse = false,
+                        ProductId = siteProduct.ProductId,
+                        SiteProductId = siteProduct.Id,
+                        SiteId = siteProduct.SiteId,
+                    }).ToList();
+                    await Db.Insertable(insertReviews).ExecuteCommandAsync();
+                    rv.True("");
+                }
+                else 
+                {
+                    logger.Warn($"{siteProduct.Site}生成{siteProduct.name}的评论，解析为{reviews.Count}条评论记录");
+                    if (retry < 1)
+                        return await DoAIReview(Db, siteProduct, ++retry);
+                }
+                return rv;
+            }
+        }
+
+        /// <summary>
+        /// 从html中提取标题和正文
+        /// </summary>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        private static List<string> ExtractReviews(string content)
+        {
+            List<string> list = new List<string>();
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return list;
+            }
+
+            // 将内容按段落分割
+            var paragraphs = Regex.Split(content.Trim(), @"\r?\n");
+
+            if (paragraphs.Length == 0)
+            {
+                return list;
+            }
+            // 正则表达式匹配中文字符
+            Regex chineseRegex = new Regex("[\u4e00-\u9fff]");
+
+            foreach (var paragraph in paragraphs)
+            {
+                // 如果段落包含中文，则跳过
+                if (chineseRegex.IsMatch(paragraph))
+                {
+                    continue;
+                }
+                list.Add(paragraph);
+            }
+
+            return list;
+        }
+
+
+        /// <summary>
+        /// 记录AI生成评论的请求
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendRecord"></param>
+        /// <param name="returnValue"></param>
+        /// <param name="prompt"></param>
+        /// <returns></returns>
+        private static async Task<int> RecordAiRequest(SqlSugarClient Db, SiteProduct siteProduct, ReturnValue<string> returnValue, string prompt)
+        {
+            string msg = returnValue.errordetailed ?? returnValue.errorsimple;
+            string content = returnValue.value;
+            var record = new AiReview
+            {
+                SiteProductId = siteProduct.Id,
+                Prompt = prompt,
+                Content = returnValue.value,
+                ErrMsg = returnValue.errordetailed ?? returnValue.errorsimple,
+                CreateTime = DateTime.Now
+            };
+            return await Db.Insertable(record).ExecuteReturnIdentityAsync();
+        }
+
+        /// <summary>
+        /// 发布评论，同步到站点
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendReview"></param>
+        /// <returns></returns>
+        public static async Task<ReturnValue<string>> DoSyncReview(SqlSugarClient Db, SendReview sendReview)
+        {
+            if (sendReview == null)
+                return new ReturnValue<string> { errorsimple = "记录不存在" };
+
+            var rv = new ReturnValue<string>();
+            if (sendReview.IsSync == true)
+            {
+                rv.False("评论已经同步");
+                return rv;
+            }
+            if (string.IsNullOrEmpty(sendReview.Content))
+            {
+                rv.False("评论未生成");
+                return rv;
+            }
+            // 同步站点
+            var syncAccount = Db.Queryable<SiteAccount>().Where(o => o.Id == sendReview.SyncSiteId).First();
+            if (syncAccount == null)
+            {
+                rv.False("同步站点不存在");
+                return rv;
+            }
+            if (syncAccount.SiteType != SiteType.WordPress)
+            {
+                rv.False("站点类型不支持");
+                return rv;
+            }
+            if (string.IsNullOrEmpty(syncAccount.WcKey) || string.IsNullOrEmpty(syncAccount.WcSecret))
+            {
+                rv.False("没有配置站点的WooCommerce授权");
+                return rv;
+            }
+
+            logger.Info($"{sendReview.SyncSite}开始同步评论到站点");
+
+            logger.Info($"{sendReview.SyncSite}发布评论中 {sendReview.ProductId}");
+            // 生成邮箱（不重要的）
+            var email = Regex.Replace(sendReview.Name, @"[^A-Za-z0-9]", "_");
+            email += "@ryty.tk";
+            var sendRes = await WordpressApi.WcReviewCreate(syncAccount.Site, syncAccount.WcKey, syncAccount.WcSecret, 
+                                sendReview.ProductId, sendReview.Name, email, sendReview.Content, sendReview.Rating);
+            if (!sendRes.status)
+            {
+                string msg = sendRes.errorsimple;
+                await Db.Updateable<SendReview>().SetColumns(o => o.SyncErrMsg == msg).Where(o => o.Id == sendReview.Id).ExecuteCommandAsync();
+                rv.False("发送出错");
+                return rv;
+            }
+            else
+            {
+                logger.Info($"{sendReview.SyncSite}同步完成");
+                rv.status = await UpdateSyncReview(Db, sendRes.value, sendReview.Id, sendReview.SyncSiteId, sendReview.ProductId);
+                return rv;
+            }
+        }
+
+        /// <summary>
+        /// 更新同步结果
+        /// </summary>
+        /// <param name="Db"></param>
+        /// <param name="sendRes"></param>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        private static async Task<bool> UpdateSyncReview(SqlSugarClient Db, string sendRes, int Id, string siteId, int productId)
+        {
+            int syncReviewId = -1;
+            DateTime? date_created_gmt = null;
+            if (!string.IsNullOrWhiteSpace(sendRes) && (sendRes.StartsWith("{") || sendRes.StartsWith("[")))
+            {
+                try
+                {
+                    var jsonResult = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(sendRes);
+                    string tmp_id = jsonResult["id"];
+                    string tmp_date = jsonResult["date_created_gmt"];
+                    int.TryParse(tmp_id, out syncReviewId);
+                    if (DateTime.TryParse(tmp_date, out DateTime date))
+                    {
+                        date_created_gmt = date;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await Db.Updateable<SendReview>()
+                        .SetColumns(o => o.SyncErrMsg == sendRes)
+                        .Where(o => o.Id == Id)
+                        .ExecuteCommandAsync();
+                    logger.Error(ex);
+                    logger.Info(sendRes);
+                    return false;
+                }
+            }
+            var ret = await Db.Updateable<SendReview>()
+                        .SetColumns(o => new SendReview { IsSync = true, ReviewId = syncReviewId, SyncTime = DateTime.Now, date_created_gmt = date_created_gmt })
+                        .Where(o => o.Id == Id)
+                        .ExecuteCommandAsync();
+
+            await Db.Updateable<SiteProduct>()
+                    .SetColumns(o => new SiteProduct { ReviewsCount = (o.ReviewsCount + 1) })
+                    .Where(o => o.SiteId == siteId && o.ProductId == productId)
+                    .ExecuteCommandAsync();
+            return ret > 0;
+
+        }
+
+        #endregion
     }
 }

@@ -299,16 +299,6 @@ namespace AIText.Controllers
                 query.Where(t => t.SyncSiteId == search.SyncSiteId);
             }
 
-            if (!string.IsNullOrEmpty(search.TemplateId))
-            {
-                query.Where(t => t.TemplateId == search.TemplateId);
-            }
-
-            if (!string.IsNullOrEmpty(search.Title))
-            {
-                query.Where(t => t.Title.Contains(search.Title));
-            }
-
             if (search.BeginTime.HasValue)
             {
                 query.Where(t => t.CreateTime >= search.BeginTime);

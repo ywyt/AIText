@@ -1,0 +1,76 @@
+﻿@model commons.util.PageList<AIText.Models.SiteProduct.SiteProductDto>
+@if (Model.List?.Count > 0)
+{
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+                <tr>
+                    <th>商品ID</th>
+                    <th>商品链接</th>
+                    <th>评论个数</th>
+                    <th>创建时间</th>
+                    <th>WP时间</th>
+                    <th>状态</th>
+                    <th class="w-1"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var info in Model.List)
+                {
+                    <tr>
+                        <td class="text-muted">
+                            @info.ProductId
+                        </td>
+                        <td class="text-muted">
+                            <a href="@info.Permalink" target="_blank">@info.name</a>
+                        </td>
+                        <td class="text-muted">
+                            @info.ReviewsCount
+                        </td>
+                        <td class="text-muted">
+                            @info.CreateTime
+                        </td>
+                        <td class="text-muted">
+                            @info.date_created_gmt
+                        </td>
+                        <td class="text-muted">
+                            @info.status
+                        </td>
+                        <td class="text-muted">
+                            <div class="btn-list flex-nowrap">
+                                <a href="/SendReview/ViewAiReview?Id=@info.Id" class="btn btn-success" target="_blank">
+                                    AI调用记录
+                                </a>
+@*                                 <a data-confirm="/SiteAccount/TestAIReviews?Id=@info.Id" title="生成AI评论" class="btn btn-warning">
+                                    生成AI评论
+                                </a>
+                                <a data-confirm="/SiteAccount/TestReviews?Id=@info.Id" title="获取评论" class="btn btn-primary">
+                                    获取评论数
+                                </a> *@
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+
+            </tbody>
+        </table>
+
+
+    </div>
+
+    @Html.Pager(Model)
+}
+else
+{
+
+    <div class="empty">
+        <div class="empty-img">
+            <img src="~/static/illustrations/undraw_printing_invoices_5r4r.svg" height="128" alt="">
+        </div>
+        <p class="empty-title">没有找到数据</p>
+        <p class="empty-subtitle text-muted">
+            Try adjusting your search or filter to find what you're looking for.
+        </p>
+    </div>
+}

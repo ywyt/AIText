@@ -1,13 +1,19 @@
 ﻿using AIText;
 using AIText.Models.SiteAccount;
+using AIText.Models.SiteProduct;
 using Entitys;
+using Entitys.WP;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using NPOI.SS.Formula.Functions;
 using SqlSugar;
+using SqlSugar.Extensions;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Work;
 
 namespace AIText.Controllers
 {
@@ -91,6 +97,8 @@ namespace AIText.Controllers
                 }
             }
 
+            model.WcKey = edit.WcKey;
+            model.WcSecret = edit.WcSecret;
             model.CountPerDay = edit.CountPerDay;
             model.IsEnable = edit.IsEnable;
             model.StartDate = edit.StartDate;
@@ -114,6 +122,152 @@ namespace AIText.Controllers
             rv.True("删除完成");
             return Json(rv);
         }
+
+        public async Task<IActionResult> TestProducts(string Id)
+        {
+            ReturnValue<string> rv = new ReturnValue<string>();
+            var model = Db.Queryable<SiteAccount>().Where(t => t.Id == Id).First();
+            if (model != null) 
+            {
+                rv.status = await GetProducts(model);
+            }
+            return Json(rv);
+        }
+
+        public async Task<IActionResult> TestReviews(int Id)
+        {
+            ReturnValue<string> rv = new ReturnValue<string>();
+            var product = Db.Queryable<SiteProduct>().Where(t => t.Id == Id).First();
+            if (product != null)
+            {
+                var site = Db.Queryable<SiteAccount>().Where(t => t.Id == product.SiteId).First();
+                rv.status = await GetReviews(site, product.ProductId);
+            }
+            return Json(rv);
+        }
+
+        public async Task<IActionResult> TestAIReviews(int Id)
+        {
+            ReturnValue<string> rv = new ReturnValue<string>();
+            var product = Db.Queryable<SiteProduct>().Where(t => t.Id == Id).First();
+            if (product != null)
+            {
+                rv = await InvokeApi.DoAIReview(Db, product);
+            }
+            return Json(rv);
+        }
+
+        private async Task<bool> GetProducts(SiteAccount model, int page = 1)
+        {
+            int pageSize = 10;
+            var rv = await WordpressApi.WcProducts(model.Site, model.WcKey, model.WcSecret, page, pageSize);
+            if (rv.status)
+            {
+                List<WooCommerceProduct> datas = new List<WooCommerceProduct>();
+                try
+                {
+                    datas = JsonConvert.DeserializeObject<List<WooCommerceProduct>>(rv.value);
+
+                }
+                catch (Exception ex)
+                {
+                    rv.False("数据解析出错");
+                    return false;
+                }
+                if (datas != null && datas.Count > 0)
+                {
+                    List<SiteProduct> list = new List<SiteProduct>();
+                    foreach (var item in datas)
+                    {
+                        // 已有记录
+                        if (Db.Queryable<SiteProduct>().Any(o => o.ProductId == item.id))
+                            continue;
+                        var product = new SiteProduct()
+                        {
+                            SiteId = model.Id,
+                            Site = model.Site,
+                            ProductId = item.id,
+                            Permalink = item.permalink?.ToString(),
+                            date_created_gmt = item.date_created_gmt,
+                            CreateTime = DateTime.Now,
+                            ReviewsCount = 0,
+                            status = item.status,
+                            name = item.name
+                        };
+                        list.Add(product);
+                    }
+                    if (list.Count > 0)
+                    {
+                        // 批量插入
+                        await Db.Insertable(list).ExecuteCommandAsync();
+                    }
+                    else
+                    {
+                        return true;
+                    }
+
+                    // 当前条数不足，说明已经到头了
+                    if (datas.Count < pageSize)
+                        return true;
+                    else
+                        return await GetProducts(model, page + 1);
+                }
+                else
+                    return true;
+            }
+            else
+                return false;
+        }
+
+        private async Task<bool> GetReviews(SiteAccount model, int productId)
+        {
+            int pageSize = 10;
+            var rv = await WordpressApi.WcProductReviewsTotal(model.Site, model.WcKey, model.WcSecret, productId);
+            if (rv.status)
+            {
+               await Db.Updateable<SiteProduct>()
+                    .SetColumns(it => it.ReviewsCount == rv.value)
+                    .Where(it => it.SiteId == model.Id && it.ProductId == productId)
+                    .ExecuteCommandAsync();
+                return true;
+            }
+            else
+                return false;
+        }
+
+        public IActionResult Products(string Id, int? ProductId)
+        {
+            var model = Db.Queryable<SiteAccount>().Where(t => t.Id == Id).First();
+            if (model != null)
+            {
+                ViewData["SiteName"] = model.Site;
+            }
+            var search = new SiteProductSearch() { SiteId = Id, ProductId = ProductId };
+            return View(search);
+        }
+
+        public async Task<IActionResult> DoProducts(SiteProductSearch search)
+        {
+            await TryUpdateModelAsync(search.Pager);
+            var query = Db.Queryable<SiteProduct>().Where(o => o.SiteId == search.SiteId);
+            if (search.ProductId > 0) 
+            {
+                query.Where(o => o.ProductId == search.ProductId);
+            }
+            query.OrderByDescending(o => o.date_created_gmt);
+            var pageList = new commons.util.PageList<SiteProductDto>();
+            int count = 0;
+            pageList.List = query.Select<SiteProductDto>().ToPageList(search.Pager.PageIndex, search.Pager.PageSize, ref count);
+            pageList.PagerModel = new commons.util.PageModel()
+            {
+                PageSize = search.Pager.PageSize,
+                PageIndex = search.Pager.PageIndex,
+                Count = count
+            };
+            return PartialView(pageList);
+        }
+
+        #region private
         private ISugarQueryable<SiteAccount> SearchSql(SiteAccountSearch search)
         {
             var query = Db.Queryable<SiteAccount>();
@@ -171,5 +325,6 @@ namespace AIText.Controllers
             }
             return numbers;
         }
+        #endregion
     }
 }

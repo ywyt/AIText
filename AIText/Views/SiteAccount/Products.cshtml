@@ -1,0 +1,16 @@
+﻿@model AIText.Models.SiteProduct.SiteProductSearch
+
+
+<div class="row  justify-content-center">
+    <div class="col-12  col-lg-12 mt-1">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">@(ViewData["SiteName"])商品列表</h4>
+            </div>
+            <div id="divreplace" class="card-body">
+                @Html.Action("DoProducts", Model)
+            </div>
+
+        </div>
+    </div>
+</div>

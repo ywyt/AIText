@@ -11,10 +11,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Work;
 
-namespace QuartzTask
+namespace QuartzReview
 {
-    public class WorkJob : IJob
+    [DisallowConcurrentExecution]
+    public class ReviewJob : IJob
     {
+        static Random random = new Random();
         static bool isRunning = false;
         public static bool IsRunning { get {return isRunning;} }
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
@@ -24,7 +26,7 @@ namespace QuartzTask
         /// <summary>
         /// 控制同时执行调用接口的数量
         /// </summary>
-        public const int MAX_API_COUNT = 4;
+        public const int MAX_API_COUNT = 2;
 
         public async Task Execute(IJobExecutionContext context)
         {
@@ -33,6 +35,7 @@ namespace QuartzTask
             {
                 // 这种情况不应该结束，当前时段任务要继续完成
                 logger.Warn("上一个任务未结束");
+                await Task.CompletedTask;
                 return;
             }
 
@@ -42,7 +45,7 @@ namespace QuartzTask
             // 业务逻辑
             var Db = SqlSugarHelper.InitDB();
 
-            InvokeApi.Init(Db);
+            await InvokeApi.InitReview(Db);
 
             var siteList = await Db.Queryable<SiteAccount>().Where(o => o.IsEnable == true && o.StartDate <= DateTime.Now).ToListAsync();
 
@@ -55,22 +58,23 @@ namespace QuartzTask
             foreach (var item in siteList)
             {
                 logger.Info($"当前处理的是{item.Site}");
-                if (item.CountPerDay > 24)
+                if (string.IsNullOrEmpty(item.WcKey) || string.IsNullOrEmpty(item.WcSecret))
                 {
-                    logger.Info($"异常的配置：{item.Site}");
+                    logger.Info($"没有配置WooCommerce授权：{item.Site}");
                     continue;
                 }
                 // 今日执行
-                var sendRecords = await Db.Queryable<SendRecord>().Where(o => o.SyncSiteId == item.Id && o.CreateTime >= currentDate).ToListAsync();
+                var sendReviews = await Db.Queryable<SendReview>().Where(o => o.SyncSiteId == item.Id && o.CreateTime >= currentDate).ToListAsync();
 
                 // 待发送，继续完成
-                var sendings = sendRecords.Where(o => o.IsSync == false).ToList();
+                var sendings = sendReviews.Where(o => o.IsSync == false).ToList();
                 if (sendings.Count > 0)
                 {
                     logger.Info($"{item.Site}未完成的{sendings.Count}条");
                     // 未完成的继续处理
                     foreach (var sending in sendings)
                     {
+                        logger.Info($"{item.Site}未完成的记录{sending.Id}");
                         await semaphore.WaitAsync();
                         _ = Task.Run(async () =>
                         {
@@ -90,44 +94,30 @@ namespace QuartzTask
                     await Task.Delay(1000);
                 }
 
-                var sentCount = sendRecords.Where(o => o.IsSync == true).Count();
+                var sentCount = sendReviews.Where(o => o.IsSync == true).Count();
                 // 今天已发送完毕
-                if (sentCount >= item.CountPerDay)
+                if (sentCount >= 1000)
                 {
                     logger.Info($"{item.Site}今日任务已达成");
                     continue;
                 }
 
-                // 判断当前小时是否在执行时间列表中
-                if (string.IsNullOrEmpty(item.Hours)) continue;
+                // TODO: 一定的概率发评论
+                //if (random.Next() < 0.2)
+                //{
+                //    continue;
+                //}
 
-                // 计算出执行时间小时段
-                int[] hours = item.Hours
-                                .Split(',')                // 按逗号分割字符串
-                                .Select(int.Parse)         // 将每个字符串转换为整数
-                                .ToArray();                // 转换成数组
-
-                if (hours.Length > 0 && !hours.Contains(currentHour))
+                // 已发布（publish）且评论最少的产品，/10 可以使得评论数有所差异
+                var product = await Db.Queryable<SiteProduct>().Where(o => o.SiteId == item.Id && o.status == "publish").OrderBy(o => SqlFunc.ToInt32(o.ReviewsCount / 10)).OrderBy(o => SqlFunc.GetRandom()).FirstAsync();
+                if (product == null)
                 {
-                    logger.Info($"{item.Site}不在执行时间范围{item.Hours}内");
-                    // 由于异常等原因，时间都过了，之前的还没执行（个数没达到要求），这时候要补上
-                    if (hours.Where(o => o < currentHour).Count() > sendRecords.Where(o => o.CreateTime.Hour < currentHour).Count())
-                    {
-                        logger.Info($"{item.Site}由于之前时段的任务未达成，需要补上任务");
-                    }
-                    // 否则跳过
-                    else
-                        continue;
-                }
-
-                if (sendRecords.Any(o => o.CreateTime.Hour == DateTime.Now.Hour))
-                {
-                    logger.Info($"{item.Site}当前小时已存在任务");
+                    logger.Info($"{item.Site}没有产品");
                     continue;
                 }
 
                 // 创建新的，当前循环应该执行的
-                var record = await InvokeApi.CreateRecord(Db, item);
+                var record = await InvokeApi.CreateReview(Db, item, product);
                 if (record.status && record.value != null)
                 {
                     await semaphore.WaitAsync();
@@ -171,53 +161,30 @@ namespace QuartzTask
         /// </summary>
         /// <param name="Db"></param>
         /// <param name="site"></param>
-        /// <param name="sendRecord"></param>
-        private static async Task<ReturnValue<string>> Send(SqlSugarClient Db, SiteAccount site, SendRecord sendRecord)
+        /// <param name="sendReview"></param>
+        private static async Task<ReturnValue<string>> Send(SqlSugarClient Db, SiteAccount site, SendReview sendReview)
         {
-            //  没有图片时选择图片
-            if (string.IsNullOrEmpty(sendRecord.ImgUrl) && string.IsNullOrEmpty(sendRecord.ImgPath))
+            // 没有评论
+            if (string.IsNullOrEmpty(sendReview.Content))
             {
-                //var rvDraw = await InvokeApi.DoDraw(Db, sendRecord);
-                //if (rvDraw.status == false)
-                //{
-                //    logger.Info("画图出错" + rvDraw.errorsimple);
-                //    return rvDraw;
-                //}
-            }
-
-            // 没有生成文章
-            if (string.IsNullOrEmpty(sendRecord.Content))
-            {
-                var rvAi = await InvokeApi.DoAI(Db, sendRecord);
+                var rvAi = await InvokeApi.DrawAIReview(Db, sendReview);
                 if (rvAi.status == false)
                 {
-                    logger.Info("生成文章出错" + rvAi.errorsimple);
+                    logger.Info("没有评论" + rvAi.errorsimple);
                     return rvAi;
                 }
             }
 
-            // 验证可否发送
-            if (!string.IsNullOrEmpty(sendRecord.Content) && !string.IsNullOrEmpty(sendRecord.Title) 
-                && double.TryParse(sendRecord.Score, out var score) && score > 7.5)
+            // 最后同步到站点
+            if (site.SiteType == SiteType.WordPress)
             {
-                // 最后同步到站点
-                if (site.SiteType == SiteType.WordPress)
-                {
-                    var rvSync = await InvokeApi.DoSync(Db, sendRecord);
-                    return rvSync;
-                }
-                else
-                {
-                    return new ReturnValue<string>() { errorsimple = $"{site.Site}是未实现的类型{site.SiteType}" };
-                }
+                var rvSync = await InvokeApi.DoSyncReview(Db, sendReview);
+                return rvSync;
             }
             else
             {
-                string errMsg = $"{site.Site}记录{sendRecord.Id}异常，未执行文章发布。文章标题{sendRecord.Title} 评分{sendRecord.Score}";
-                logger.Error(errMsg);
-                return new ReturnValue<string>() { errorsimple = errMsg };
+                return new ReturnValue<string>() { errorsimple = $"{site.Site}是未实现的类型{site.SiteType}" };
             }
         }
-
     }
 }

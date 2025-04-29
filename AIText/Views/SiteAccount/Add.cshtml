@@ -35,19 +35,34 @@
 
             <div class="row mb-3 align-items-end">
 
-                <div class="col">
+                <div class="col-6">
                     <label class="form-label">用户名</label>
                     <input asp-for="Username" class="bg-focus form-control parsley-validated" />
                     <span asp-validation-for="Username" class="text-danger"> </span>
                 </div>
-            </div>
 
-            <div class="row mb-3 align-items-end">
-
-                <div class="col">
+                <div class="col-6">
                     <label class="form-label">密码</label>
                     <input asp-for="Password" type="text" class="bg-focus form-control parsley-validated" />
                     <span asp-validation-for="Password" class="text-danger"> </span>
+                </div>
+            </div>
+
+            <div class="row mb-3 align-items-end word-press-only">
+
+                <div class="col">
+                    <label class="form-label">WcKey</label>
+                    <input asp-for="WcKey" type="text" class="bg-focus form-control parsley-validated" />
+                    <span asp-validation-for="WcKey" class="text-danger"> </span>
+                </div>
+            </div>
+
+            <div class="row mb-3 align-items-end word-press-only">
+
+                <div class="col">
+                    <label class="form-label">WcSecret</label>
+                    <input asp-for="WcSecret" type="text" class="bg-focus form-control parsley-validated" />
+                    <span asp-validation-for="WcSecret" class="text-danger"> </span>
                 </div>
             </div>
 
@@ -87,7 +102,7 @@
 </div>
 <script>
     $(function() {
-        $("#IsEnable").change(function() {
+        $("#modal #IsEnable").change(function() {
             if ($(this).is(":checked")) {
                 $(".enable-send").show();
                 $(".enable-send").removeClass("d-none");
@@ -102,6 +117,19 @@
                 })
             }
         });
-        $("#IsEnable").trigger("change");
+        $("#modal #IsEnable").trigger("change");
+        $("#modal #SiteType").change(function() {
+            if ($(this).val() == '@Entitys.SiteType.WordPress.GetHashCode()') {
+                $(".word-press-only").show();
+                $(".word-press-only").removeClass("d-none");
+            } else {
+                $(".word-press-only").each(function(idx, item){
+                    if (!$(item).hasClass("d-none")) {
+                        $(item).addClass("d-none");
+                    }
+                })
+            }
+        });
+        $("#modal #SiteType").trigger("change");
     });
 </script>

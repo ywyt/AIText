@@ -1,0 +1,66 @@
+﻿@model commons.util.PageList<AIText.Models.SendReview.AiReviewDto>
+@if (Model.List?.Count > 0)
+{
+    <div class="card-header">
+        <h4 class="card-title">列表</h4>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+                <tr>
+                    <th>站点</th>
+                    <th>关联商品</th>
+                    <th>记录创建时间</th>
+                    <th class="w-1"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var info in Model.List)
+                {
+                    <tr>
+                        <td class="text-muted">
+                            @info.Site
+                        </td>
+                        <td class="text-muted">
+                            <a href="@info.Permalink" target="_blank">
+                                @info.ProductName
+                            </a>
+                        </td>
+                        <td class="text-muted">
+                            @info.CreateTime <br/>
+                        </td>
+                        <td class="text-muted">
+                            <div class="btn-list flex-nowrap">
+                                <a href="@Url.Content("~/SendReview/ViewAiReview?Id=" + info.SiteProductId)" class="btn btn-azure">
+                                    查看
+                                </a>
+                                <a data-confirmt="/SendReview/DoDelete?Id=@info.Id" title="是否删除记录" class="btn btn-danger">
+                                    删除
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+
+            </tbody>
+        </table>
+
+
+    </div>
+
+    @Html.Pager(Model)
+}
+else
+{
+
+    <div class="empty">
+        <div class="empty-img">
+            <img src="~/static/illustrations/undraw_printing_invoices_5r4r.svg" height="128" alt="">
+        </div>
+        <p class="empty-title">没有找到数据</p>
+        <p class="empty-subtitle text-muted">
+            Try adjusting your search or filter to find what you're looking for.
+        </p>
+    </div>
+}

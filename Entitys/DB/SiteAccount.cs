@@ -18,6 +18,8 @@ namespace Entitys
         public System.String Username { get; set; }
         public System.String Password { get; set; }
         public System.String AccessKey { get; set; }
+        public string WcKey { get; set; }
+        public string WcSecret { get; set; }
         public bool IsEnable { get; set; }
         public int CountPerDay { get; set; }
         /// <summary>
