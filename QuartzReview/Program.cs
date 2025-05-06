@@ -33,7 +33,7 @@ namespace QuartzReview
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity("reviewTrigger", "group2") // 触发器名称和分组
                 .WithSimpleSchedule(x => x
-                    .WithIntervalInSeconds(10) // 触发间隔
+                    .WithIntervalInMinutes(5) // 触发间隔
                     .RepeatForever()) // 一直重复
                 .StartNow() // 立即开始
                 .Build();

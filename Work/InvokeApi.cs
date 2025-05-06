@@ -1397,7 +1397,8 @@ namespace Work
             else
             {
                 logger.Info($"{sendReview.SyncSite}同步完成");
-                rv.status = await UpdateSyncReview(Db, sendRes.value, sendReview.Id, sendReview.SyncSiteId, sendReview.ProductId);
+                rv.status = await UpdateSyncReview(Db, sendRes.value, sendReview.Id, sendReview.SiteProductId);
+                logger.Info($"{sendReview.SyncSite}修改了商品{sendReview.SiteProductId}的评论数");
                 return rv;
             }
         }
@@ -1409,7 +1410,7 @@ namespace Work
         /// <param name="sendRes"></param>
         /// <param name="Id"></param>
         /// <returns></returns>
-        private static async Task<bool> UpdateSyncReview(SqlSugarClient Db, string sendRes, int Id, string siteId, int productId)
+        private static async Task<bool> UpdateSyncReview(SqlSugarClient Db, string sendRes, int Id, int siteProductId)
         {
             int syncReviewId = -1;
             DateTime? date_created_gmt = null;
@@ -1443,8 +1444,8 @@ namespace Work
                         .ExecuteCommandAsync();
 
             await Db.Updateable<SiteProduct>()
-                    .SetColumns(o => new SiteProduct { ReviewsCount = (o.ReviewsCount + 1) })
-                    .Where(o => o.SiteId == siteId && o.ProductId == productId)
+                    .SetColumns(o => o.ReviewsCount == (o.ReviewsCount + 1))
+                    .Where(o => o.Id == siteProductId)
                     .ExecuteCommandAsync();
             return ret > 0;
 
