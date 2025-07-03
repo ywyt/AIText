@@ -1,53 +1,29 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AIText.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace AIText.Controllers
 {
-    public class BaseController : Controller
+    public class HomeController : BaseController
     {
-        public const string SessionKey = "admin";
+        private readonly ILogger<HomeController> _logger;
 
-        public UserData UserData;
-
-        public UserData GetSession()
+        public HomeController(ILogger<HomeController> logger)
         {
-            var json = HttpContext.Session.GetString(SessionKey);
-            if (json != null)
-            {
-                var user = Newtonsoft.Json.JsonConvert.DeserializeObject<UserData>(json);
-                ViewData["username"] = user;
-                return user;
-            }
-            else
-            {
-                return null;
-            }
+            _logger = logger;
         }
 
-
-        public override void OnActionExecuting(ActionExecutingContext filterContext)
+        public IActionResult Index()
         {
-            var userData = GetSession();
-            if (userData == null)
-            {
-                filterContext.Result = Redirect("~/login");
-            }
-            UserData = userData;
+            return View();
         }
-    }
 
-    public class UserData
-    {
-        public string AdminId { get; set; }
-
-        public string Name { get; set; }
-
-        public bool IsAdmin { get; set; }
-
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
     }
 }

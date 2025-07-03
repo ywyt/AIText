@@ -90,6 +90,34 @@ namespace QuartzTask
                     await Task.Delay(1000);
                 }
 
+                var dateAround = DateTime.Now.AddDays(-7);
+                // 近期发送失败的
+                var sendings1 = await Db.Queryable<SendRecord>().Where(o => o.SyncSiteId == item.Id && o.CreateTime >= dateAround && o.IsSync == false && o.Content != null && o.Content != "").ToListAsync();
+                if (sendings1.Count > 0)
+                {
+                    logger.Info($"{item.Site}近期未发送的{sendings1.Count}条");
+                    // 未完成的继续处理
+                    foreach (var sending in sendings1)
+                    {
+                        await semaphore.WaitAsync();
+                        _ = Task.Run(async () =>
+                        {
+                            // 为每个并发操作创建独立的 SqlSugar 实例
+                            var Db1 = SqlSugarHelper.InitDB();
+                            var start = DateTime.Now;
+                            await Task.WhenAny(Send(Db1, item, sending), Task.Delay(MAX_LONG_TIMEOUT));
+                            if (DateTime.Now - start >= MAX_LONG_TIMEOUT)
+                            {
+                                logger.Info($"{item.Site}任务超时，放弃处理");
+                            }
+                            Db1.Dispose();
+                            semaphore.Release();
+                        });
+                    }
+                    // 等待以免API调用间隔过短
+                    await Task.Delay(1000);
+                }
+
                 var sentCount = sendRecords.Where(o => o.IsSync == true).Count();
                 // 今天已发送完毕
                 if (sentCount >= item.CountPerDay)
